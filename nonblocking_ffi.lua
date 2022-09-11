@@ -7,7 +7,7 @@ local libs = {}
 
 ffi.cdef[[
 void *malloc(size_t size);
-void lib_nonblocking_ffi_init(void *tq);
+int lib_nonblocking_ffi_init(char* cfg, int cfg_len, void *tq);
 void* ngx_nonblocking_ffi_create_task_queue(int max_queue);
 int ngx_http_lua_nonblocking_ffi_task_post(ngx_http_request_t *r,
     void* tq, char* req, int req_len);
@@ -31,9 +31,10 @@ local mt = {
     __call = post,
 }
 
-ngx.load_nonblocking_ffi = function(lib, max_queue)
-    if libs[lib] then
-        return libs[lib]
+ngx.load_nonblocking_ffi = function(lib, cfg, max_queue)
+    local key = lib .. "&" .. cfg
+    if libs[key] then
+        return libs[key]
     end
 
     if not max_queue then
@@ -45,7 +46,12 @@ ngx.load_nonblocking_ffi = function(lib, max_queue)
         handle = ffi.load(lib),
         tq = tq,
     }, mt)
-    nffi.handle.lib_nonblocking_ffi_init(tq)
-    libs[lib] = nffi
-    return nffi
+
+    local buf = C.malloc(#cfg)
+    ffi.copy(buf, cfg)
+    local rc = nffi.handle.lib_nonblocking_ffi_init(buf, #cfg, tq)
+    if rc == 0 then
+        libs[key] = nffi
+        return nffi
+    end
 end

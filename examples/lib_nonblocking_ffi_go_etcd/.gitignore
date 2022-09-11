@@ -1,0 +1,4 @@
+*.so
+*.h
+logs/*
+!logs/.gitkeep
