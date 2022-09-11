@@ -31,7 +31,7 @@ local mt = {
     __call = post,
 }
 
-ngx.load_nonblocking_ffi = function(lib, cfg, max_queue)
+ngx.load_nonblocking_ffi = function(lib, cfg, max_queue, is_global)
     local key = lib .. "&" .. cfg
     if libs[key] then
         return libs[key]
@@ -43,7 +43,7 @@ ngx.load_nonblocking_ffi = function(lib, cfg, max_queue)
 
     local tq = C.ngx_nonblocking_ffi_create_task_queue(max_queue)
     local nffi = setmetatable({
-        handle = ffi.load(lib),
+        handle = ffi.load(lib, is_global),
         tq = tq,
     }, mt)
 
