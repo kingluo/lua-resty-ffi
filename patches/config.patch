@@ -1,0 +1,18 @@
+--- a/config	2022-03-02 14:54:22.000000000 +0800
++++ b/config	2022-09-10 17:54:17.135457183 +0800
+@@ -298,6 +298,7 @@
+             $ngx_addon_dir/src/ngx_http_lua_input_filters.c \
+             $ngx_addon_dir/src/ngx_http_lua_pipe.c \
+             $ngx_addon_dir/src/ngx_http_lua_worker_thread.c \
++            $ngx_addon_dir/src/ngx_http_lua_nonblocking_ffi.c \
+             "
+ 
+ HTTP_LUA_DEPS=" \
+@@ -359,6 +360,7 @@
+             $ngx_addon_dir/src/ngx_http_lua_input_filters.h \
+             $ngx_addon_dir/src/ngx_http_lua_pipe.h \
+             $ngx_addon_dir/src/ngx_http_lua_worker_thread.h \
++            $ngx_addon_dir/src/ngx_http_lua_nonblocking_ffi.h \
+             "
+ 
+ # ----------------------------------------

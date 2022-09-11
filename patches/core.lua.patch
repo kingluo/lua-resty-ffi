@@ -1,0 +1,10 @@
+--- a/core.lua	2021-11-14 09:43:51.000000000 +0800
++++ b/core.lua	2022-09-10 23:27:31.490194528 +0800
+@@ -13,6 +13,7 @@
+ require "resty.core.exit"
+ require "resty.core.base64"
+ require "resty.core.request"
++require "resty.core.nonblocking_ffi"
+ 
+ 
+ if subsystem == 'http' then
