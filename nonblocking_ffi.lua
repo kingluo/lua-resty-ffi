@@ -14,9 +14,14 @@ int ngx_http_lua_nonblocking_ffi_task_post(ngx_http_request_t *r,
 ]]
 
 local function post(self, req)
-    local buf = C.malloc(#req)
-    ffi.copy(buf, req)
-    local ret = C.ngx_http_lua_nonblocking_ffi_task_post(get_request(), self.tq, buf, #req)
+    local buf = nil
+    local buf_len = 0
+    if req then
+        buf_len = #req
+        buf = C.malloc(#req)
+        ffi.copy(buf, req)
+    end
+    local ret = C.ngx_http_lua_nonblocking_ffi_task_post(get_request(), self.tq, buf, buf_len)
     if ret ~= 0 then
         return false, "post failed, queue full"
     end
@@ -32,7 +37,10 @@ local mt = {
 }
 
 ngx.load_nonblocking_ffi = function(lib, cfg, max_queue, is_global)
-    local key = lib .. "&" .. cfg
+    local key = lib
+    if cfg then
+        key = lib .. "&" .. cfg
+    end
     if libs[key] then
         return libs[key]
     end
@@ -47,9 +55,14 @@ ngx.load_nonblocking_ffi = function(lib, cfg, max_queue, is_global)
         tq = tq,
     }, mt)
 
-    local buf = C.malloc(#cfg)
-    ffi.copy(buf, cfg)
-    local rc = nffi.handle.lib_nonblocking_ffi_init(buf, #cfg, tq)
+    local buf = nil
+    local buf_len = 0
+    if cfg then
+        buf_len = #cfg
+        buf = C.malloc(#cfg)
+        ffi.copy(buf, cfg)
+    end
+    local rc = nffi.handle.lib_nonblocking_ffi_init(buf, buf_len, tq)
     if rc == 0 then
         libs[key] = nffi
         return nffi

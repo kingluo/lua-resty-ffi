@@ -14,13 +14,30 @@ typedef struct {
 void *threadFunc( void *p )
 {
     state_t *state = p;
-    const char* module = state->module;
+    char* module = state->module;
     const char* func = state->func;
+
+    char* last = strrchr(module, '/');
+    int dirlen;
+    char *dir = NULL;
+    if (last != NULL) {
+        dirlen = strlen(module) - strlen(last);
+        dir = strndup(module, dirlen);
+        module = last + 1;
+    }
+
     PyObject *pName, *pModule, *pFunc;
     PyObject *pArgs, *pValue;
 
     PyGILState_STATE gstate;
     gstate = PyGILState_Ensure();
+
+    if (dir != NULL) {
+        PyObject* sys = PyImport_ImportModule( "sys" );
+        PyObject* sys_path = PyObject_GetAttrString( sys, "path" );
+        PyObject* folder_path = PyUnicode_FromString( dir );
+        PyList_Insert( sys_path, 0, folder_path );
+    }
 
     pName = PyUnicode_DecodeFSDefault(module);
     /* Error checking of pName left out */
@@ -42,7 +59,7 @@ void *threadFunc( void *p )
                 goto end;
             }
             /* pValue reference stolen here: */
-            PyTuple_SetItem(pArgs, 0, PyLong_FromVoidPtr(NULL));
+            PyTuple_SetItem(pArgs, 0, PyLong_FromVoidPtr(state->cfg));
             PyTuple_SetItem(pArgs, 1, pValue);
             PyTuple_SetItem(pArgs, 2, PyLong_FromVoidPtr(state->tq));
 
@@ -77,28 +94,43 @@ end:
     return NULL;
 }
 
+char* nth_strchr(const char* s, int c, int n)
+{
+    int c_count;
+    char* nth_ptr;
+
+    for (c_count=1, nth_ptr = strchr(s, c);
+         nth_ptr != NULL && c_count < n && c != 0;
+         c_count++)
+    {
+         nth_ptr = strchr(nth_ptr+1, c);
+    }
+
+    return nth_ptr;
+}
+
 int lib_nonblocking_ffi_init(char* cfg, int cfg_len, void *tq)
 {
     if (mainThreadState == NULL) {
         Py_Initialize();
-        PyObject* sys = PyImport_ImportModule( "sys" );
-        PyObject* sys_path = PyObject_GetAttrString( sys, "path" );
-        PyObject* folder_path = PyUnicode_FromString( "." );
-        PyList_Append( sys_path, folder_path );
         mainThreadState = PyEval_SaveThread();
     }
 
     state_t* state = malloc(sizeof(state_t));
+    state->tq = tq;
+
     char *token, *str, *tofree;
     tofree = str = strdup(cfg);
     token = strsep(&str, ",");
     state->module = strdup(token);
     token = strsep(&str, ",");
     state->func = strdup(token);
-    token = strsep(&str, ",");
-    state->cfg = strdup(token);
+
+    char* pos = nth_strchr(cfg, (int)',', 2);
+    state->cfg = pos + 1;
+
     free(tofree);
-    state->tq = tq;
+
 
     pthread_t thread;
     pthread_attr_t attr;
