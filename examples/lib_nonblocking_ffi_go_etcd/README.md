@@ -11,6 +11,6 @@ CGO_CFLAGS="-I/opt/lua-resty-nonblocking-ffi" go build -buildmode=c-shared -o li
 ## Test
 
 ```bash
-/opt/nffi/nginx/sbin/nginx -p $PWD -c nginx.conf -g "daemon off;"
+LD_LIBRARY_PATH=$PWD /opt/nffi/nginx/sbin/nginx -p $PWD -c nginx.conf -g "daemon off;"
 curl localhost:10000
 ```

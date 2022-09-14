@@ -13,7 +13,7 @@ gcc $(python3-config --cflags) $(python3-config --ldflags) -o lib_nonblocking_ff
 ```bash
 pip3 install kafka-python cffi
 cd examples/lib_nonblocking_ffi_python3
-/opt/nffi/nginx/sbin/nginx -p $PWD -c nginx.conf -g "daemon off;"
+LD_LIBRARY_PATH=$PWD PYTHONPATH=$PWD /opt/nffi/nginx/sbin/nginx -p $PWD -c nginx.conf -g "daemon off;"
 
 curl localhost:10000
 ```
