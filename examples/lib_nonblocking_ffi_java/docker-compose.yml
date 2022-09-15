@@ -1,0 +1,7 @@
+version: "2"
+
+services:
+  httpbin:
+    image: kennethreitz/httpbin
+    ports:
+      - "10080:80"
