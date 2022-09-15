@@ -36,17 +36,24 @@ local mt = {
     __call = post,
 }
 
-ngx.load_nonblocking_ffi = function(lib, cfg, max_queue, is_global)
+ngx.load_nonblocking_ffi = function(lib, cfg, opts)
+    local max_queue = 65536
+    local is_global = false
+    if opts ~= nil then
+        if opts.max_queue ~= nil then
+            max_queue = opts.max_queue
+        end
+        if opts.is_global ~= nil then
+            is_global = opts.is_global
+        end
+    end
+
     local key = lib
     if cfg then
         key = lib .. "&" .. cfg
     end
     if libs[key] then
         return libs[key]
-    end
-
-    if not max_queue then
-        max_queue = 65536
     end
 
     local tq = C.ngx_nonblocking_ffi_create_task_queue(max_queue)
