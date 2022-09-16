@@ -5,10 +5,10 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>demo.App</groupId>
-  <artifactId>httpclient-demo</artifactId>
+  <artifactId>http2-demo</artifactId>
   <version>1.0-SNAPSHOT</version>
 
-  <name>httpclient-demo</name>
+  <name>http2-demo</name>
   <!-- FIXME change it to the project's website -->
   <url>http://www.example.com</url>
 

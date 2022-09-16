@@ -19,10 +19,10 @@ char* nth_strchr(const char* s, int c, int n)
     char* nth_ptr;
 
     for (c_count=1, nth_ptr = strchr(s, c);
-         nth_ptr != NULL && c_count < n && c != 0;
-         c_count++)
+            nth_ptr != NULL && c_count < n && c != 0;
+            c_count++)
     {
-         nth_ptr = strchr(nth_ptr+1, c);
+        nth_ptr = strchr(nth_ptr+1, c);
     }
 
     return nth_ptr;
@@ -31,25 +31,25 @@ char* nth_strchr(const char* s, int c, int n)
 void* java_thread(void *p)
 {
     state_t        *state= p;
-	JNIEnv         *env;
-	jclass          cls;
-	jmethodID       mid;
+    JNIEnv         *env;
+    jclass          cls;
+    jmethodID       mid;
 
     (*vm)->AttachCurrentThread(vm, (void**)&env, NULL);
 
-	cls = (*env)->FindClass(env, state->class);
-	if (cls == NULL) {
-		printf("Failed to find Main class\n");
-		return NULL;
-	}
+    cls = (*env)->FindClass(env, state->class);
+    if (cls == NULL) {
+        printf("Failed to find Main class\n");
+        return NULL;
+    }
 
-	mid = (*env)->GetStaticMethodID(env, cls, state->method, "(J)V");
-	if (mid == NULL) {
-		printf("Failed to find main function\n");
-		return NULL;
-	}
+    mid = (*env)->GetStaticMethodID(env, cls, state->method, "(J)V");
+    if (mid == NULL) {
+        printf("Failed to find main function\n");
+        return NULL;
+    }
 
-	(*env)->CallStaticVoidMethod(env, cls, mid, (jlong)state->tq);
+    (*env)->CallStaticVoidMethod(env, cls, mid, (jlong)state->tq);
 
     /* Check for errors. */
     if ((*env)->ExceptionOccurred(env)) {
@@ -70,7 +70,7 @@ int lib_nonblocking_ffi_init(char* cfg, int cfg_len, void *tq)
         jstring         jstr;
         jobjectArray    main_args;
 
-        JavaVMOption options[2];
+        JavaVMOption options[1];
         vm_args.version  = JNI_VERSION_1_8;
         vm_args.nOptions = 0;
         vm_args.options = options;
@@ -104,7 +104,7 @@ int lib_nonblocking_ffi_init(char* cfg, int cfg_len, void *tq)
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
     pthread_create(&thread, &attr, &java_thread, state);
 
-	return 0;
+    return 0;
 }
 
 static const char *JNIT_CLASS = "resty/NgxHttpLuaNonblockingFFI";
