@@ -16,6 +16,7 @@ patch -p1 < /opt/lua-resty-nonblocking-ffi/patches/core.lua.patch
 cd /opt/openresty-1.21.4.1/bundle/nginx-1.21.4/src/core/
 patch -p1 < /opt/lua-resty-nonblocking-ffi/patches/ngx_thread_pool.c.patch
 
+cd /opt/lua-resty-nonblocking-ffi/
 cp -a ngx_http_lua_nonblocking_ffi.c ngx_http_lua_nonblocking_ffi.h /opt/openresty-1.21.4.1/bundle/ngx_lua-0.10.21/src/
 cp -a nonblocking_ffi.lua /opt/openresty-1.21.4.1/bundle/lua-resty-core-0.1.23/lib/resty/core/
 
