@@ -1,6 +1,6 @@
 package demo.http2;
 
-import java.io.IOException;
+import resty.NgxHttpLuaNonblockingFFI;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
@@ -10,7 +10,6 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpClient.Version;
 import java.util.LinkedHashMap;
 import com.google.gson.Gson;
-import resty.NgxHttpLuaNonblockingFFI;
 
 class Request {
     public String method;

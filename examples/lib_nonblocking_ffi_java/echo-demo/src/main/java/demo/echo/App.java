@@ -9,23 +9,23 @@ class PollThread implements Runnable {
         this.tq = tq;
     }
 
-	public void run() {
-		while(true) {
-			var task = NgxHttpLuaNonblockingFFI.task_poll(tq);
-			var req = NgxHttpLuaNonblockingFFI.get_req(task);
+    public void run() {
+        while(true) {
+            var task = NgxHttpLuaNonblockingFFI.task_poll(tq);
+            var req = NgxHttpLuaNonblockingFFI.get_req(task);
             String rsp = new String(req);
             NgxHttpLuaNonblockingFFI.respond(task, 0, rsp.getBytes());
-		}
-	}
+        }
+    }
 }
 
 public class App
 {
     public static void init(long tq)
     {
-		var pollThread = new PollThread(tq);
-		Thread thread = new Thread(pollThread);
-		thread.setDaemon(true);
-		thread.start();
+        var pollThread = new PollThread(tq);
+        Thread thread = new Thread(pollThread);
+        thread.setDaemon(true);
+        thread.start();
     }
 }
