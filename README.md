@@ -1,8 +1,14 @@
 # lua-resty-nonblocking-ffi
 
+## Env
+
+`Ubuntu 20.04`
+
 ## Build
 
 ```bash
+apt install -y build-essential
+
 cd /opt
 git clone https://github.com/kingluo/lua-resty-nonblocking-ffi
 wget https://openresty.org/download/openresty-1.21.4.1.tar.gz
