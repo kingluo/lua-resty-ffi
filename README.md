@@ -86,11 +86,136 @@ The runtime injects the response (also C `malloc()` char array)
 into the `ngx_thread_pool_done` queue directly and notify the nginx epoll loop via eventfd,
 the nginx would resumes the lua coroutine then.
 
-Thanks to the simple patch of nginx (ten lines of additional codes), here no need to use
-traditional nginx worker thread pool for lua to get the response, which is low-efficient (thread context switchs),
-and nonscaleable (consumption of linux threads).
+By contrast, the thread pool way to get response is:
+* low-efficient (extra thread context switchs)
+* nonscaleable (consumption of linux threads, then the throughput is limited by the thread pool size)
+* complicated (the runtime needs to assign the request with id and store them in hashmap like structure for access).
 
-## API description
+## Lua API
+
+### `local runtime = ngx.load_nonblocking_ffi(lib, cfg, opts)`
+
+Load and return the runtime
+
+* `lib`
+shared library name. It could be absolute file path or name only,
+or even short name (e.g. for `libdemo.so`, the short name is `demo`).
+When the `lib` is in name, it's searched according to `LD_LIBRARY_PATH` environment variable.
+
+* `cfg` configuration, it could be string or nil.
+
+* `opts` options table.
+
+```lua
+{
+    -- the maximum queue size for pending requests to the runtime.
+    max_queue = 65536,
+    -- denotes whether the symbols loaded from library
+    -- would be exported in global namespace, which is necessary for python3.
+    is_global = false,
+}
+```
+
+This API is idempotent. The loaded runtime is cached in internal table, where
+the table key is `lib .. '&' .. cfg`.
+
+This function calls the `lib_nonblocking_ffi_init` of the library per key.
+
+It means the same library with different configuration would init a different new runtime,
+which is especially useful for python3 and Java.
+
+Example:
+
+```lua
+local opts = {is_global = true}
+local demo = ngx.load_nonblocking_ffi("lib_nonblocking_ffi_python3.so",
+    [[nffi_kafka,init,{"servers":"localhost:9092", "topic":"foobar", "group_id": "foobar"}]], opts)
+```
+
+### `local ok, res = runtime:foo(req)`
+
+Send a request to the rutnime and returns the response.
+
+* `req` the request string, could be in any serialization format, e.g. json, flatbuffer, as long as it matches the runtime implementation.
+
+* `ok` return status, true or false
+
+* `res` response string, could be in any serialization format, e.g. json, flatbuffer, as long as it matches the runtime implementation.
+
+This method is nonblocking, which means the coroutine would yield waiting for the response and resume with the return values.
+
+Note that the method name `foo` could be any name you like, it would be generated automatically by the `__index` meta function, and only used to denote the request semantics。
+
+Example:
+
+```lua
+local ok, res
+ok, res = demo:produce([[{"type":"produce", "msg":"hello"}]])
+assert(ok)
+ok, res = demo:produce([[{"type":"produce", "msg":"world"}]])
+assert(ok)
+ngx.sleep(2)
+ok, res = demo:consume([[{"type":"consume"}]])
+assert(ok)
+ngx.say(res)
+
+```
+
+## API provided by runtime
+
+### `int lib_nonblocking_ffi_init(char* cfg, int cfg_len, void *tq);`
+
+This API is provided by the library to initiate its logic and start the poll thread/goroutine.
+
+Example:
+
+```go
+//export lib_nonblocking_ffi_init
+func lib_nonblocking_ffi_init(cfg *C.char, cfg_len C.int, tq unsafe.Pointer) C.int {
+    var etcdNodes []string
+    data := C.GoBytes(unsafe.Pointer(cfg), cfg_len)
+    err := json.Unmarshal(data, &etcdNodes)
+    if err != nil {
+        log.Println("invalid cfg:", err)
+        return -1
+    }
+
+    cli, err := clientv3.New(clientv3.Config{
+        Endpoints:   etcdNodes,
+        DialTimeout: 5 * time.Second,
+    })
+    ...
+    go func() {
+        isWatchStart := false
+        state := &State{cli: cli}
+        for {
+            task := C.ngx_http_lua_nonblocking_ffi_task_poll(tq)
+            ...
+        }
+    }()
+    return 0
+}
+```
+
+## APIs used by runtime
+
+### `void* ngx_http_lua_nonblocking_ffi_task_poll(void *p);`
+
+Poll the task from the task queue assigned to the runtime.
+
+### `char* ngx_http_lua_nonblocking_ffi_get_req(void *tsk, int *len);`
+
+Extract the request from the task. Note that the request could be NULL, so the runtime may not use this API.
+
+### `void ngx_http_lua_nonblocking_ffi_respond(void *tsk, int rc, char* rsp, int rsp_len);`
+
+Response the task.
+
+All above APIs are thread-safe. So you could use them in anywhere in your thread/goroutine of your runtime.
+
+* `rc` return status, `0` means successful, other values means failure.
+* `rsp` response char array, may be NULL if the runtime does not need to response something.
+* `rsp_len` the length of response, may be `0` if the `rsp` is NULL or `\0' terminated C string.
 
 ## Build
 
@@ -104,7 +229,7 @@ git clone https://github.com/kingluo/lua-resty-nonblocking-ffi
 wget https://openresty.org/download/openresty-1.21.4.1.tar.gz
 tar zxf openresty-1.21.4.1.tar.gz
 
-# patch and install files
+# patch and install source codes
 cd /opt/openresty-1.21.4.1/bundle/ngx_lua-0.10.21/
 patch -p1 < /opt/lua-resty-nonblocking-ffi/patches/config.patch
 cd /opt/openresty-1.21.4.1/bundle/lua-resty-core-0.1.23/lib/resty/
@@ -113,11 +238,13 @@ cd /opt/openresty-1.21.4.1/bundle/nginx-1.21.4/src/core/
 patch -p1 < /opt/lua-resty-nonblocking-ffi/patches/ngx_thread_pool.c.patch
 
 cd /opt/lua-resty-nonblocking-ffi/
-cp -a ngx_http_lua_nonblocking_ffi.c ngx_http_lua_nonblocking_ffi.h /opt/openresty-1.21.4.1/bundle/ngx_lua-0.10.21/src/
+cp -a ngx_http_lua_nonblocking_ffi.c /opt/openresty-1.21.4.1/bundle/ngx_lua-0.10.21/src/
 cp -a nonblocking_ffi.lua /opt/openresty-1.21.4.1/bundle/lua-resty-core-0.1.23/lib/resty/core/
 
+# compile and install openresty
 cd /opt/openresty-1.21.4.1
-
 ./configure --prefix=/opt/nffi --with-threads
 make install
+
+# the openresty is installed in /opt/nffi/
 ```
