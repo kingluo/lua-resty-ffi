@@ -3,7 +3,7 @@
 This library provides an efficient and generic API to do programming in other languages.
 
 **Features:**
-* simple but extensible interface
+* simple but extensible interface, supports any language with C ABI compliant
 * once and for all, no need to write C/Lua codes to do coupling anymore
 * high performance, 3~4 times faster than unix domain socket way
 * bridges for python/java, once and for all
