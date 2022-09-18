@@ -20,18 +20,32 @@ when you need to do grpc to access external services, you must depends on C++ li
 
 2. Lua is embedded and minority programming language, which means all the powers comes from the host.
 In openresty, it means all functionalities comes from lua-nginx-modules. Like C, or even worse, you have to
-reinvent the wheels via cosocket to do modern networking stuff.
+reinvent the wheels via cosocket to do modern networking stuff. A lot of lua-resty-* born, but they are almost
+semi-finished products compared to native lib in other languages. For example, lua-resty-kafka doesn't support
+consumer group, lua-resty-postgres doesn't support notify and prepared statements, etc. Moreover, most of those authors
+of lua-resty-* stop development at some stage because lua community is so small and less attractive.
 
 To implement a common function in other main stream languages, you have to do a lot of adaptive codes back and forward
 between nginx and openresty. For example, http2 requires SNI and viable session reuse, then you have to patch C codes
 and openresty and/or nginx. Moreover, when you turn to accomplish a new job, you need to redo all such things again!
-Then, a lot of *-nginx-module borns and recompile your nginx! Painful, right?
+Then, a lot of *-nginx-module born and recompile your nginx! Painful, right?
 
-Let's think about one question: may I extend the openresty with modern programming languages and use their rich ecosystems directly?
+**Why not WASM?**
+
+WASM lacks of below features, which is useless esepcially for openresty:
+* no coroutine, which means you need to execute the logic from start to end and block the nginx worker process with arbitrary time
+* castrated language support, e.g. go doesn't suppport WASM fully, you need to use tiny-go
+* WASI is not supported in almost all lanuages, which means it's hard to use their battery-included lib and ecosystem
+* complex development, due to sandbox original intention, you have to export a lot of API for callbacks
+* threading model is pending feature and almost all languages do not support it
+
+All in all, WASM is painful and hard way to adapt other languages into the Nginx world.
+
+**May I extend the openresty with modern programming languages and reuse their rich ecosystems directly? That means, we reseved everything from languages and let them work together with Nginx at ease.**
 
 ## Architecture
 
-![1663428340694](https://user-images.githubusercontent.com/4401042/190864410-98b0b5b1-a599-4a51-81d5-1590d2d90271.png)
+![1663476422225](https://user-images.githubusercontent.com/4401042/190886217-9fb97d6c-bf3f-435d-bdd8-702ce86dde2d.png)
 
 ## Concepts
 
@@ -76,13 +90,11 @@ and nonscaleable (consumption of linux threads).
 
 ## API description
 
-## Test Env
-
-`Ubuntu 20.04`
-
 ## Build
 
 ```bash
+# OS: Ubuntu 20.04
+
 apt install -y build-essential
 
 cd /opt
