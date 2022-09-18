@@ -8,11 +8,3 @@
              "
  
  HTTP_LUA_DEPS=" \
-@@ -359,6 +360,7 @@
-             $ngx_addon_dir/src/ngx_http_lua_input_filters.h \
-             $ngx_addon_dir/src/ngx_http_lua_pipe.h \
-             $ngx_addon_dir/src/ngx_http_lua_worker_thread.h \
-+            $ngx_addon_dir/src/ngx_http_lua_nonblocking_ffi.h \
-             "
- 
- # ----------------------------------------

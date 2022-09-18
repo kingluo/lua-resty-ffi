@@ -3,9 +3,10 @@
 ## Build
 
 ```bash
-cd examples/lib_nonblocking_ffi_python3
+cd examples/lib_nonblocking_ffi_go_etcd
 go mod download
-CGO_CFLAGS="-I/opt/lua-resty-nonblocking-ffi" go build -buildmode=c-shared -o lib_nonblocking_ffi_go_etcd.so main.go
+go build -buildmode=c-shared -o lib_nonblocking_ffi_go_etcd.so main.go
+go build -buildmode=c-shared -o libecho.so echo.go
 ```
 
 ## Test

@@ -58,7 +58,9 @@ ngx_http_lua_nonblocking_ffi_get_req(void *tsk, int *len)
 {
     ngx_thread_task_t *task = tsk;
     nonblocking_ffi_task_ctx_t *ctx = task->ctx;
-    *len = ctx->req_len;
+    if (len != NULL) {
+        *len = ctx->req_len;
+    }
     return ctx->req;
 }
 
@@ -188,7 +190,11 @@ ngx_http_lua_nonblocking_ffi_event_handler(ngx_event_t *ev)
 
     lua_pushboolean(L, nonblocking_ffi_ctx->rc ? 0 : 1);
     if (nonblocking_ffi_ctx->rsp) {
-        lua_pushlstring(L, nonblocking_ffi_ctx->rsp, nonblocking_ffi_ctx->rsp_len);
+        if (nonblocking_ffi_ctx->rsp_len) {
+            lua_pushlstring(L, nonblocking_ffi_ctx->rsp, nonblocking_ffi_ctx->rsp_len);
+        } else {
+            lua_pushstring(L, nonblocking_ffi_ctx->rsp);
+        }
     } else {
         lua_pushnil(L);
     }

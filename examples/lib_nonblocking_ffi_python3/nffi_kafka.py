@@ -1,19 +1,10 @@
+from nffi import *
+
 import threading
 import json
 import queue
 from kafka import KafkaProducer
 from kafka import KafkaConsumer
-
-from cffi import FFI
-ffi = FFI()
-ffi.cdef("""
-void* malloc(size_t);
-void *memcpy(void *dest, const void *src, size_t n);
-void* ngx_http_lua_nonblocking_ffi_task_poll(void *p);
-char* ngx_http_lua_nonblocking_ffi_get_req(void *tsk, int *len);
-void ngx_http_lua_nonblocking_ffi_respond(void *tsk, int rc, char* rsp, int rsp_len);
-""")
-C = ffi.dlopen(None)
 
 class State:
     def __init__(self, cfg):
@@ -94,16 +85,12 @@ class State:
     def poll(self, tq):
         while True:
             task = C.ngx_http_lua_nonblocking_ffi_task_poll(ffi.cast("void*", tq))
-            rlen = ffi.new("int[1]")
-            r = C.ngx_http_lua_nonblocking_ffi_get_req(task, rlen)
-            print(r)
+            r = C.ngx_http_lua_nonblocking_ffi_get_req(task, ffi.NULL)
             self.taskq.put((task, r))
 
 def init(cfg, cfg_len, tq):
     data = ffi.string(ffi.cast("char*", cfg))
-    print(data)
     cfg = json.loads(data)
-    print(cfg)
     st = State(cfg)
     t = threading.Thread(target=st.poll, args=(tq,))
     t.daemon = True
