@@ -1,6 +1,6 @@
 # lua-resty-nonblocking-ffi
 
-This library provides an efficient and generic API to do programming in other languages.
+This library provides an efficient and generic API to do hybrid programming in other languages.
 
 **Features:**
 * simple but extensible interface, supports any C ABI compliant language
