@@ -3,7 +3,7 @@
 This library provides an efficient and generic API to do programming in other languages.
 
 **Features:**
-* simple but extensible interface, supports any language with C ABI compliant
+* simple but extensible interface, supports any C ABI compliant language
 * once and for all, no need to write C/Lua codes to do coupling anymore
 * high performance, 3~4 times faster than unix domain socket way
 * bridges for python/java, once and for all
@@ -58,9 +58,13 @@ In Python3, it means the generic shared bridged library `lib_nonblocking_ffi_pyt
 In Java, it means the generic bridged shared library `lib_nonblocking_ffi_java.so`, and native Java classes/jar.
 
 ### Library configuration
+
 Configuration of the library, e.g. etcd endpoints, kafka endpoints, etc.
 
+The format could be any serialization format, e.g. json, flatbuffer, yaml, as long as it matches the runtime 
+
 ### Runtime
+
 The combination of library and configuration would init a new runtime, which may include some threads or goroutines to do jobs.
 
 You could use the same library with different configuration, which is a common case.
