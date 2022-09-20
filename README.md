@@ -41,7 +41,7 @@ WASM lacks of below features, which is useless esepcially for openresty:
 
 All in all, WASM is painful and hard way to adapt other languages into the Nginx world.
 
-**May I extend the openresty with modern programming languages and reuse their rich ecosystems directly? That means, we reseved everything from languages and let them work together with Nginx at ease.**
+**May I extend the openresty with modern programming languages (Go, Python, Java, etc.) and reuse their rich ecosystems directly? That means, we reserved everything from those main stream languages and let them work together with Nginx at ease.**
 
 ## Architecture
 
