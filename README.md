@@ -1,6 +1,6 @@
 # lua-resty-nonblocking-ffi
 
-lua-resty-nonblocking-ffi provides an efficient and generic API to do hybrid programming in other languages.
+lua-resty-nonblocking-ffi provides an efficient and generic API to do hybrid programming in openresty with mainstream languages (Go, Python, Java, etc.).
 
 **Features:**
 * simple but extensible interface, supports any C ABI compliant language
