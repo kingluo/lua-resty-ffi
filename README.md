@@ -11,24 +11,13 @@ This library provides an efficient and generic API to do hybrid programming in o
 
 ## Background
 
-In openresty land, when you turns to implement some logic, especially to couple with third-party popular frameworks,
-it's likely to suck in awkward: make bricks without straw。
+In openresty land, when you turn to implement some logic, especially to couple with third-party popular frameworks, it's likely to suck in awkward: make bricks without straw.
 
-1. C is low-level language, very little ecosystem, no unified and rich libraries, and almost
-all modern frameworks do not support C, instead, they like Java, Python, Go. For example,
-when you need to do grpc to access external services, you must depends on C++ lib, which is huge and cumbersome.
+1. C is a low-level language, very little ecosystem, no unified and rich libraries, and almost all modern frameworks do not support C, instead, they like Java, Python, Go. For example, when you need to do grpc to access external services, you must depend on C++ lib, which is huge and cumbersome.
 
-2. Lua is embedded and minority programming language, which means all the powers comes from the host.
-In openresty, it means all functionalities comes from lua-nginx-modules. Like C, or even worse, you have to
-reinvent the wheels via cosocket to do modern networking stuff. A lot of lua-resty-* born, but they are almost
-semi-finished products compared to native lib in other languages. For example, lua-resty-kafka doesn't support
-consumer group, lua-resty-postgres doesn't support notify and prepared statements, etc. Moreover, most of those authors
-of lua-resty-* stop development at some stage because lua community is so small and less attractive.
+2. Lua is an embedded and minority programming language, which means all the powers comes from the host. In openresty, it means all functionalities come from lua-nginx-modules. Like C, or even worse, you have to reinvent the wheels via cosocket to do modern networking stuff. A lot of lua-resty-* were born, but they are almost semi-finished compared to native lib in other languages. For example, lua-resty-kafka doesn't support consumer groups, lua-resty-postgres doesn't support notify and prepared statements, etc. Moreover, most of those authors of lua-resty-* stop development at some stage because the lua community is so small and less attractive.
 
-To implement a common function in other main stream languages, you have to do a lot of adaptive codes back and forward
-between nginx and openresty. For example, http2 requires SNI and viable session reuse, then you have to patch C codes
-and openresty and/or nginx. Moreover, when you turn to accomplish a new job, you need to redo all such things again!
-Then, a lot of *-nginx-module born and recompile your nginx! Painful, right?
+To implement a common function in other mainstream languages, you have to do a lot of adaptive coding back and forward between nginx and openresty. For example, http2 requires SNI and viable session reuse, then you have to patch C codes and openresty and/or nginx. Moreover, when you turn to accomplish a new job, you need to redo all such things again! Then, a lot of *-nginx-module born and recompile your nginx! Painful, right?
 
 **Why not WASM?**
 
@@ -41,7 +30,7 @@ WASM lacks of below features, which is useless esepcially for openresty:
 
 All in all, WASM is painful and hard way to adapt other languages into the Nginx world.
 
-**May I extend the openresty with modern programming languages (Go, Python, Java, etc.) and reuse their rich ecosystems directly? That means, we reserved everything from those main stream languages and let them work together with Nginx at ease.**
+**May I extend the openresty with modern programming languages (Go, Python, Java, etc.) and reuse their rich ecosystems directly? That means, we reserved everything from those mainstream languages and let them work together with Nginx at ease.**
 
 ## Architecture
 
