@@ -19,7 +19,7 @@ local function post(self, req)
     if req then
         buf_len = #req
         buf = C.malloc(#req)
-        ffi.copy(buf, req)
+        ffi.copy(buf, req, #req)
     end
     local ret = C.ngx_http_lua_nonblocking_ffi_task_post(get_request(), self.tq, buf, buf_len)
     if ret ~= 0 then
@@ -67,7 +67,7 @@ ngx.load_nonblocking_ffi = function(lib, cfg, opts)
     if cfg then
         buf_len = #cfg
         buf = C.malloc(#cfg)
-        ffi.copy(buf, cfg)
+        ffi.copy(buf, cfg, #cfg)
     end
     local rc = nffi.handle.lib_nonblocking_ffi_init(buf, buf_len, tq)
     if rc == 0 then
