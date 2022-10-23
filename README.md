@@ -1,6 +1,6 @@
 # lua-resty-nonblocking-ffi
 
-lua-resty-nonblocking-ffi provides an efficient and generic API to do hybrid programming in openresty with mainstream languages (Go, Python, Java, etc.).
+lua-resty-nonblocking-ffi provides an efficient and generic API to do hybrid programming in openresty with mainstream languages (Go, Python, Java, Rust, etc.).
 
 **Features:**
 * simple but extensible interface, supports any C ABI compliant language
@@ -54,7 +54,7 @@ In Java, it means the shim library `lib_nonblocking_ffi_java.so`, and native Jav
 
 Configuration of the library, e.g. etcd endpoints, kafka endpoints, etc.
 
-The format could be any serialization format, e.g. json, flatbuffer, yaml, as long as it matches the runtime 
+The format could be any serialization format, e.g. json, yaml, as long as it matches the runtime 
 
 ### Runtime
 
@@ -133,11 +133,11 @@ local demo = ngx.load_nonblocking_ffi("lib_nonblocking_ffi_python3.so",
 
 Send a request to the rutnime and returns the response.
 
-* `req` the request string, could be in any serialization format, e.g. json, flatbuffer, as long as it matches the runtime implementation.
+* `req` the request string, could be in any serialization format, e.g. json, protobuf, as long as it matches the runtime implementation.
 
 * `ok` return status, true or false
 
-* `res` response string, could be in any serialization format, e.g. json, flatbuffer, as long as it matches the runtime implementation.
+* `res` response string, could be in any serialization format, e.g. json, protobuf, as long as it matches the runtime implementation.
 
 This method is nonblocking, which means the coroutine would yield waiting for the response and resume with the return values.
 
@@ -160,7 +160,7 @@ ngx.say(res)
 
 ## API provided by runtime
 
-### `int lib_nonblocking_ffi_init(char* cfg, int cfg_len, void *tq);`
+### `int lib_nonblocking_ffi_init(char* cfg, void *tq);`
 
 This API is provided by the library to initiate its logic and start the poll thread/goroutine.
 
@@ -168,10 +168,10 @@ Example:
 
 ```go
 //export lib_nonblocking_ffi_init
-func lib_nonblocking_ffi_init(cfg *C.char, cfg_len C.int, tq unsafe.Pointer) C.int {
+func lib_nonblocking_ffi_init(cfg *C.char, tq unsafe.Pointer) C.int {
     var etcdNodes []string
-    data := C.GoBytes(unsafe.Pointer(cfg), cfg_len)
-    err := json.Unmarshal(data, &etcdNodes)
+    data := C.GoString(cfg)
+    err := json.Unmarshal([]byte(data), &etcdNodes)
     if err != nil {
         log.Println("invalid cfg:", err)
         return -1
