@@ -27,9 +27,9 @@ func echoServer(c net.Conn) {
 }
 
 //export lib_nonblocking_ffi_init
-func lib_nonblocking_ffi_init(cfg *C.char, cfg_len C.int, tq unsafe.Pointer) C.int {
-	log.Println("cfg_len: ", cfg_len)
-	if cfg_len > 0 {
+func lib_nonblocking_ffi_init(cfg_cstr *C.char, tq unsafe.Pointer) C.int {
+	cfg := C.GoString(cfg_cstr)
+	if cfg == "uds" {
 		log.Println("start unix server")
 		go func() {
 			if err := os.RemoveAll(SockAddr); err != nil {
@@ -58,12 +58,16 @@ func lib_nonblocking_ffi_init(cfg *C.char, cfg_len C.int, tq unsafe.Pointer) C.i
 		go func() {
 			for {
 				task := C.ngx_http_lua_nonblocking_ffi_task_poll(tq)
+                if task == nil {
+                    break
+                }
 				var rlen C.int
 				r := C.ngx_http_lua_nonblocking_ffi_get_req(task, &rlen)
 				res := C.malloc(C.ulong(rlen))
 				C.memcpy(res, unsafe.Pointer(r), C.ulong(rlen))
 				C.ngx_http_lua_nonblocking_ffi_respond(task, 0, (*C.char)(res), rlen)
 			}
+            log.Println("exit go echo runtime")
 		}()
 	}
 	return 0
