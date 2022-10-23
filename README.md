@@ -158,6 +158,10 @@ ngx.say(res)
 
 ```
 
+### `local ok, res = runtime:__unload()`
+
+Unload the runtime, after that, no request could be sent to this runtime anymore.
+
 ## API provided by runtime
 
 ### `int lib_nonblocking_ffi_init(char* cfg, void *tq);`
@@ -199,6 +203,9 @@ func lib_nonblocking_ffi_init(cfg *C.char, tq unsafe.Pointer) C.int {
 ### `void* ngx_http_lua_nonblocking_ffi_task_poll(void *p);`
 
 Poll the task from the task queue assigned to the runtime.
+
+When it returns `NULL`, it denotes the runtime was unloaded, the polling thread/goroutine should clean up
+everything of this runtime and do not access the task queue anymore (because the task queue was deallocated in C)!
 
 ### `char* ngx_http_lua_nonblocking_ffi_get_req(void *tsk, int *len);`
 
