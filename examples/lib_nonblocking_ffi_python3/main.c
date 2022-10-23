@@ -11,9 +11,9 @@ typedef struct {
     void* tq;
 } state_t;
 
-void *threadFunc( void *p )
+static int init(state_t *state)
 {
-    state_t *state = p;
+    int rc = 1;
     char* module = state->module;
     const char* func = state->func;
 
@@ -50,23 +50,15 @@ void *threadFunc( void *p )
         /* pFunc is a new reference */
 
         if (pFunc && PyCallable_Check(pFunc)) {
-            pArgs = PyTuple_New(3);
-            pValue = PyLong_FromLong(666);
-            if (!pValue) {
-                Py_DECREF(pArgs);
-                Py_DECREF(pModule);
-                fprintf(stderr, "Cannot convert argument\n");
-                goto end;
-            }
-            /* pValue reference stolen here: */
+            pArgs = PyTuple_New(2);
             PyTuple_SetItem(pArgs, 0, PyLong_FromVoidPtr(state->cfg));
-            PyTuple_SetItem(pArgs, 1, pValue);
-            PyTuple_SetItem(pArgs, 2, PyLong_FromVoidPtr(state->tq));
+            PyTuple_SetItem(pArgs, 1, PyLong_FromVoidPtr(state->tq));
 
             pValue = PyObject_CallObject(pFunc, pArgs);
             Py_DECREF(pArgs);
             if (pValue != NULL) {
-                printf("Result of call: %ld\n", PyLong_AsLong(pValue));
+                rc = PyLong_AsLong(pValue);
+                // printf("Result of call: %ld\n", PyLong_AsLong(pValue));
                 Py_DECREF(pValue);
                 goto end;
             } else {
@@ -77,8 +69,9 @@ void *threadFunc( void *p )
                 goto end;
             }
         } else {
-            if (PyErr_Occurred())
+            if (PyErr_Occurred()) {
                 PyErr_Print();
+            }
             fprintf(stderr, "Cannot find function \"%s\"\n", func);
         }
         Py_XDECREF(pFunc);
@@ -91,7 +84,7 @@ void *threadFunc( void *p )
 
 end:
     PyGILState_Release(gstate);
-    return NULL;
+    return rc;
 }
 
 char* nth_strchr(const char* s, int c, int n)
@@ -109,39 +102,29 @@ char* nth_strchr(const char* s, int c, int n)
     return nth_ptr;
 }
 
-int lib_nonblocking_ffi_init(char* cfg, int cfg_len, void *tq)
+int lib_nonblocking_ffi_init(char* cfg, void *tq)
 {
     if (mainThreadState == NULL) {
         Py_Initialize();
         mainThreadState = PyEval_SaveThread();
     }
 
-    state_t* state = malloc(sizeof(state_t));
-    state->tq = tq;
+    state_t state = {0};
+    state.tq = tq;
 
     char *token, *str, *tofree;
     tofree = str = strdup(cfg);
     token = strsep(&str, ",");
-    state->module = strdup(token);
+    state.module = strdup(token);
     token = strsep(&str, ",");
-    state->func = strdup(token);
+    state.func = strdup(token);
 
     char* pos = nth_strchr(cfg, (int)',', 2);
-    state->cfg = pos + 1;
+    if (pos) {
+        state.cfg = pos + 1;
+    }
 
     free(tofree);
 
-
-    pthread_t thread;
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-    pthread_create(&thread, &attr, &threadFunc, state);
-
-    //PyEval_RestoreThread(mainThreadState);
-    //if (Py_FinalizeEx() < 0) {
-    //    return NULL;
-    //}
-
-    return 0;
+    return init(&state);
 }

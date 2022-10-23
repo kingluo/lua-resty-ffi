@@ -2,16 +2,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include <ngx_http_lua_nonblocking_ffi.h>
+extern void* ngx_http_lua_nonblocking_ffi_task_poll(void *p);
+extern char* ngx_http_lua_nonblocking_ffi_get_req(void *tsk, int *len);
+extern void ngx_http_lua_nonblocking_ffi_respond(void *tsk, int rc, char* rsp, int rsp_len);
 
 static JavaVM *vm;
-
-typedef struct {
-    char* class;
-    char* method;
-    char* cfg;
-    void* tq;
-} state_t;
+static JNIEnv *env;
 
 char* nth_strchr(const char* s, int c, int n)
 {
@@ -28,41 +24,9 @@ char* nth_strchr(const char* s, int c, int n)
     return nth_ptr;
 }
 
-void* java_thread(void *p)
-{
-    state_t        *state= p;
-    JNIEnv         *env;
-    jclass          cls;
-    jmethodID       mid;
-
-    (*vm)->AttachCurrentThread(vm, (void**)&env, NULL);
-
-    cls = (*env)->FindClass(env, state->class);
-    if (cls == NULL) {
-        printf("Failed to find Main class\n");
-        return NULL;
-    }
-
-    mid = (*env)->GetStaticMethodID(env, cls, state->method, "(J)V");
-    if (mid == NULL) {
-        printf("Failed to find main function\n");
-        return NULL;
-    }
-
-    (*env)->CallStaticVoidMethod(env, cls, mid, (jlong)state->tq);
-
-    /* Check for errors. */
-    if ((*env)->ExceptionOccurred(env)) {
-        (*env)->ExceptionDescribe(env);
-    }
-
-    return NULL;
-}
-
-int lib_nonblocking_ffi_init(char* cfg, int cfg_len, void *tq)
+int lib_nonblocking_ffi_init(char* cfg, void *tq)
 {
     if (vm == NULL) {
-        JNIEnv         *env;
         JavaVMInitArgs  vm_args;
         jint            res;
         jclass          cls;
@@ -89,22 +53,37 @@ int lib_nonblocking_ffi_init(char* cfg, int cfg_len, void *tq)
         }
     }
 
-    state_t* state = malloc(sizeof(state_t));
-    state->tq = tq;
-
     char* sep1 = nth_strchr(cfg, (int)',', 1);
-    state->class = strndup(cfg, sep1-cfg);
+    char* class = strndup(cfg, sep1-cfg);
     char* sep2 = nth_strchr(cfg, (int)',', 2);
-    state->method = strndup(sep1+1, sep2-sep1-1);
-    state->cfg = sep2 + 1;
+    char* method = strndup(sep1+1, sep2-sep1-1);
+    char* cfg_str = sep2 + 1;
 
-    pthread_t thread;
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-    pthread_create(&thread, &attr, &java_thread, state);
+    jclass          cls;
+    jmethodID       mid;
 
-    return 0;
+    cls = (*env)->FindClass(env, class);
+    if (cls == NULL) {
+        printf("Failed to find Main class\n");
+        return 1;
+    }
+
+    mid = (*env)->GetStaticMethodID(env, cls, method, "(JLjava/lang/String;)I");
+    if (mid == NULL) {
+        printf("Failed to find main function\n");
+        return 1;
+    }
+
+    jstring jcfg = (*env)->NewStringUTF(env, cfg_str);
+    int rc = (*env)->CallStaticIntMethod(env, cls, mid, (jlong)tq, jcfg);
+    (*env)->DeleteLocalRef(env, jcfg);
+
+    /* Check for errors. */
+    if ((*env)->ExceptionOccurred(env)) {
+        (*env)->ExceptionDescribe(env);
+    }
+
+    return rc;
 }
 
 static const char *JNIT_CLASS = "resty/NgxHttpLuaNonblockingFFI";
