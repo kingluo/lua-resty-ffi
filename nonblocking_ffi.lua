@@ -3,29 +3,43 @@ local C = ffi.C
 local base = require "resty.core.base"
 local get_request = base.get_request
 
-local libs = {}
+local runtimes = {}
 
 ffi.cdef[[
 void *malloc(size_t size);
-int lib_nonblocking_ffi_init(char* cfg, int cfg_len, void *tq);
+int lib_nonblocking_ffi_init(char* cfg, void *tq);
 void* ngx_nonblocking_ffi_create_task_queue(int max_queue);
-int ngx_http_lua_nonblocking_ffi_task_post(ngx_http_request_t *r,
-    void* tq, char* req, int req_len);
+int ngx_http_lua_nonblocking_ffi_task_post(ngx_http_request_t *r, void* tq, char* req, int req_len);
+int ngx_http_lua_nonblocking_ffi_task_finish(void *p);
 ]]
 
 local function post(self, req)
+    if self.finished then
+        return false, "task queue is finished"
+    end
     local buf = nil
     local buf_len = 0
     if req then
         buf_len = #req
-        buf = C.malloc(#req)
-        ffi.copy(buf, req, #req)
+        buf = C.malloc(#req + 1)
+        ffi.copy(buf, req)
     end
     local ret = C.ngx_http_lua_nonblocking_ffi_task_post(get_request(), self.tq, buf, buf_len)
     if ret ~= 0 then
         return false, "post failed, queue full"
     end
     return coroutine._yield()
+end
+
+local function unload(self)
+    if not self.finished then
+        self.finished = true
+        self.handle = nil
+        C.ngx_http_lua_nonblocking_ffi_task_finish(self.tq)
+        self.tq = nil
+        runtimes[self.key] = nil
+        self.key = nil
+    end
 end
 
 local mt = {
@@ -52,26 +66,28 @@ ngx.load_nonblocking_ffi = function(lib, cfg, opts)
     if cfg then
         key = lib .. "&" .. cfg
     end
-    if libs[key] then
-        return libs[key]
+    if runtimes[key] then
+        return runtimes[key]
     end
 
     local tq = C.ngx_nonblocking_ffi_create_task_queue(max_queue)
     local nffi = setmetatable({
+        finished = false,
+        key = key,
         handle = ffi.load(lib, is_global),
         tq = tq,
+        __unload = unload,
     }, mt)
 
     local buf = nil
-    local buf_len = 0
     if cfg then
-        buf_len = #cfg
-        buf = C.malloc(#cfg)
-        ffi.copy(buf, cfg, #cfg)
+        buf = C.malloc(#cfg + 1)
+        ffi.copy(buf, cfg)
     end
-    local rc = nffi.handle.lib_nonblocking_ffi_init(buf, buf_len, tq)
+    local rc = nffi.handle.lib_nonblocking_ffi_init(buf, tq)
     if rc == 0 then
-        libs[key] = nffi
+        runtimes[key] = nffi
         return nffi
     end
+    return nil, rc
 end

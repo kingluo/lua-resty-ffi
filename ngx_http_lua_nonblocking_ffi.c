@@ -259,6 +259,19 @@ ngx_nonblocking_ffi_create_task_queue(int max_queue)
 }
 
 
+void
+ngx_nonblocking_ffi_free_task_queue(nonblocking_ffi_task_queue_t* tp)
+{
+    /*
+     * After special finished task, no new task post (ensured by lua land),
+     * and all pending tasks are handled, so no tasks in the queue now.
+     */
+    ngx_thread_mutex_destroy(&tp->mtx, ngx_cycle->log);
+    ngx_thread_cond_destroy(&tp->cond, ngx_cycle->log);
+    ngx_free(tp);
+}
+
+
 static ngx_thread_task_t*
 ngx_http_lua_nonblocking_ffi_create_task(ngx_http_request_t *r)
 {
@@ -305,7 +318,7 @@ ngx_task_post(nonblocking_ffi_task_queue_t *tp, ngx_thread_task_t *task)
         return NGX_ERROR;
     }
 
-    if (tp->waiting >= tp->max_queue) {
+    if (task->ctx && tp->waiting >= tp->max_queue) {
         (void) ngx_thread_mutex_unlock(&tp->mtx, tp->log);
 
         ngx_log_error(NGX_LOG_ERR, tp->log, 0,
@@ -352,6 +365,23 @@ ngx_http_lua_nonblocking_ffi_task_post(void *p0, void* p, char* req, int req_len
 }
 
 
+int
+ngx_http_lua_nonblocking_ffi_task_finish(void* p)
+{
+    nonblocking_ffi_task_queue_t *tp = p;
+
+    ngx_thread_task_t *task = ngx_calloc(sizeof(ngx_thread_task_t), ngx_cycle->log);
+
+    /* append, so that all pending tasks get handled before finished */
+    if (ngx_task_post(tp, task) != NGX_OK) {
+        ngx_free(task);
+        return NGX_ERROR;
+    }
+
+    return NGX_OK;
+}
+
+
 void*
 ngx_http_lua_nonblocking_ffi_task_poll(void *p)
 {
@@ -384,7 +414,13 @@ ngx_http_lua_nonblocking_ffi_task_poll(void *p)
         return NULL;
     }
 
-    return task;
+    if (task->ctx) {
+        return task;
+    }
+
+    ngx_free(task);
+    ngx_nonblocking_ffi_free_task_queue(tp);
+    return NULL;
 }
 
 
