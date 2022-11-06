@@ -9,7 +9,7 @@ ffi.cdef[[
 void *malloc(size_t size);
 int lib_nonblocking_ffi_init(char* cfg, void *tq);
 void* ngx_nonblocking_ffi_create_task_queue(int max_queue);
-int ngx_http_lua_nonblocking_ffi_task_post(ngx_http_request_t *r, void* tq, char* req, int req_len);
+int ngx_http_lua_nonblocking_ffi_task_post(void *r, void* tq, char* req, int req_len);
 int ngx_http_lua_nonblocking_ffi_task_finish(void *p);
 ]]
 
