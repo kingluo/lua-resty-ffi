@@ -9,6 +9,7 @@ use std::str::FromStr;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
+use tokio::sync::mpsc;
 use tonic::{
     codec::{Codec, DecodeBuf, Decoder, EncodeBuf, Encoder},
     Status,
@@ -47,6 +48,11 @@ pub struct GrpcCommand {
 struct TaskQueueHandle(*const c_void);
 unsafe impl Send for TaskQueueHandle {}
 unsafe impl Sync for TaskQueueHandle {}
+
+#[derive(Clone, Debug)]
+struct TaskHandle(*const c_void);
+unsafe impl Send for TaskHandle {}
+unsafe impl Sync for TaskHandle {}
 
 extern "C" {
     fn ngx_http_lua_nonblocking_ffi_task_poll(p: *const c_void) -> *const c_void;
@@ -120,12 +126,13 @@ pub extern "C" fn lib_nonblocking_ffi_init(_cfg: *mut c_char, tq: *const c_void)
 
     thread::spawn(move || {
         rt.block_on(async move {
-            let client_cnt = Arc::new(AtomicU64::new(1));
+            let obj_cnt = Arc::new(AtomicU64::new(1));
             let clients = Arc::new(Mutex::new(HashMap::new()));
+            let streams = Arc::new(Mutex::new(HashMap::new()));
             let tq = tq.clone();
 
             loop {
-                let task = unsafe { TaskQueueHandle(ngx_http_lua_nonblocking_ffi_task_poll(tq.0)) };
+                let task = unsafe { TaskHandle(ngx_http_lua_nonblocking_ffi_task_poll(tq.0)) };
                 if task.0.is_null() {
                     break;
                 }
@@ -140,7 +147,7 @@ pub extern "C" fn lib_nonblocking_ffi_init(_cfg: *mut c_char, tq: *const c_void)
 
                 match cmd.cmd {
                     0 => {
-                        let client_cnt = client_cnt.clone();
+                        let obj_cnt = obj_cnt.clone();
                         let clients = clients.clone();
                         tokio::spawn(async move {
                             let task = task.clone();
@@ -150,7 +157,7 @@ pub extern "C" fn lib_nonblocking_ffi_init(_cfg: *mut c_char, tq: *const c_void)
                                 .await
                                 .unwrap();
                             let cli = tonic::client::Grpc::new(cli);
-                            let id = format!("cli-{}", client_cnt.fetch_add(1, Ordering::SeqCst));
+                            let id = format!("cli-{}", obj_cnt.fetch_add(1, Ordering::SeqCst));
                             unsafe {
                                 let res = libc::malloc(id.len());
                                 libc::memcpy(res, id.as_ptr() as *const c_void, id.len());
@@ -207,6 +214,92 @@ pub extern "C" fn lib_nonblocking_ffi_init(_cfg: *mut c_char, tq: *const c_void)
                                 }
                             }
                         });
+                    }
+                    3 => {
+                        let obj_cnt = obj_cnt.clone();
+                        let clients = clients.clone();
+                        let streams = streams.clone();
+                        tokio::spawn(async move {
+                            let task = task.clone();
+                            let mut cli = clients.lock().unwrap().get(&cmd.key).unwrap().clone();
+                            let (send_tx, send_rx) = mpsc::unbounded_channel::<EncodedBytes>();
+                            let send_stream =
+                                tokio_stream::wrappers::UnboundedReceiverStream::new(send_rx);
+                            let (recv_tx, mut recv_rx) = mpsc::unbounded_channel::<TaskHandle>();
+                            let pp = cmd.path.unwrap();
+                            let path = PathAndQuery::from_str(&pp).unwrap();
+                            let mut stream = cli
+                                .streaming(tonic::Request::new(send_stream), path, MyCodec)
+                                .await
+                                .unwrap()
+                                .into_inner();
+                            let id = format!("stream-{}", obj_cnt.fetch_add(1, Ordering::SeqCst));
+                            tokio::spawn(async move {
+                                while let Some(task) = recv_rx.recv().await {
+                                    if let Some(res) = stream.message().await.unwrap() {
+                                        unsafe {
+                                            ngx_http_lua_nonblocking_ffi_respond(
+                                                task.0,
+                                                0,
+                                                res.0,
+                                                res.1 as i32,
+                                            );
+                                        }
+                                    } else {
+                                        unsafe {
+                                            ngx_http_lua_nonblocking_ffi_respond(
+                                                task.0,
+                                                1,
+                                                std::ptr::null_mut(),
+                                                0,
+                                            );
+                                        }
+                                    }
+                                }
+                            });
+                            unsafe {
+                                let res = libc::malloc(id.len());
+                                libc::memcpy(res, id.as_ptr() as *const c_void, id.len());
+                                let len = id.len();
+                                streams.lock().unwrap().insert(id, (send_tx, recv_tx));
+                                ngx_http_lua_nonblocking_ffi_respond(
+                                    task.0,
+                                    0,
+                                    res as *mut c_char,
+                                    len as i32,
+                                );
+                            }
+                        });
+                    }
+                    4 => {
+                        let (send_tx, _) = streams.lock().unwrap().get(&cmd.key).unwrap().clone();
+                        let mut vec = cmd.payload.unwrap().0;
+                        let buf =
+                            EncodedBytes(vec.as_mut_slice().as_mut_ptr() as *mut c_char, vec.len());
+                        unsafe {
+                            ngx_http_lua_nonblocking_ffi_respond(
+                                task.0,
+                                if send_tx.send(buf).is_ok() { 0 } else { 1 },
+                                std::ptr::null_mut(),
+                                0,
+                            );
+                        }
+                    }
+                    5 => {
+                        let (_, recv_tx) = streams.lock().unwrap().get(&cmd.key).unwrap().clone();
+                        let task = task.clone();
+                        recv_tx.send(task).unwrap();
+                    }
+                    6 => {
+                        streams.lock().unwrap().remove(&cmd.key);
+                        unsafe {
+                            ngx_http_lua_nonblocking_ffi_respond(
+                                task.0,
+                                0,
+                                std::ptr::null_mut(),
+                                0,
+                            );
+                        }
                     }
                     _ => todo!(),
                 }
