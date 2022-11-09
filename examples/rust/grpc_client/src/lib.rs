@@ -36,6 +36,15 @@ impl<'de> Deserialize<'de> for Base64 {
     }
 }
 
+const NEW_CONNECTION: i32 = 0;
+const CLOSE_CONNECTION: i32 = 1;
+const UNARY: i32 = 2;
+const NEW_STREAM: i32 = 3;
+const CLOSE_STREAM: i32 = 4;
+const CLOSE_SEND: i32 = 5;
+const STREAM_SEND: i32 = 6;
+const STREAM_RECV: i32 = 7;
+
 #[derive(Deserialize, Debug)]
 pub struct GrpcCommand {
     cmd: i32,
@@ -65,7 +74,7 @@ extern "C" {
     );
 }
 
-struct EncodedBytes(*mut c_char, usize);
+struct EncodedBytes(*mut c_char, usize, bool);
 unsafe impl Send for EncodedBytes {}
 unsafe impl Sync for EncodedBytes {}
 
@@ -94,6 +103,9 @@ impl Encoder for MyCodec {
     fn encode(&mut self, item: Self::Item, dst: &mut EncodeBuf<'_>) -> Result<(), Self::Error> {
         let slice = unsafe { slice::from_raw_parts(item.0 as *const u8, item.1) };
         dst.put_slice(slice);
+        if item.2 {
+            unsafe{ libc::free(item.0 as *mut c_void); }
+        }
         Ok(())
     }
 }
@@ -105,10 +117,14 @@ impl Decoder for MyCodec {
     fn decode(&mut self, buf: &mut DecodeBuf<'_>) -> Result<Option<Self::Item>, Self::Error> {
         let chunk = buf.chunk();
         let len = chunk.len();
-        let cbuf = unsafe { libc::malloc(len) };
-        unsafe { libc::memcpy(cbuf, chunk.as_ptr() as *const c_void, len) };
-        buf.advance(len);
-        Ok(Some(EncodedBytes(cbuf as *mut c_char, len)))
+        if len > 0 {
+            let cbuf = unsafe { libc::malloc(len) };
+            unsafe { libc::memcpy(cbuf, chunk.as_ptr() as *const c_void, len) };
+            buf.advance(len);
+            Ok(Some(EncodedBytes(cbuf as *mut c_char, len, false)))
+        } else {
+            Ok(Some(EncodedBytes(std::ptr::null_mut() as *mut c_char, 0, false)))
+        }
     }
 }
 
@@ -146,7 +162,7 @@ pub extern "C" fn lib_nonblocking_ffi_init(_cfg: *mut c_char, tq: *const c_void)
                 //println!("cmd: {:?}", cmd);
 
                 match cmd.cmd {
-                    0 => {
+                    NEW_CONNECTION => {
                         let obj_cnt = obj_cnt.clone();
                         let clients = clients.clone();
                         tokio::spawn(async move {
@@ -172,7 +188,7 @@ pub extern "C" fn lib_nonblocking_ffi_init(_cfg: *mut c_char, tq: *const c_void)
                             }
                         });
                     }
-                    1 => {
+                    CLOSE_CONNECTION => {
                         clients.lock().unwrap().remove(&cmd.key);
                         unsafe {
                             ngx_http_lua_nonblocking_ffi_respond(
@@ -183,7 +199,7 @@ pub extern "C" fn lib_nonblocking_ffi_init(_cfg: *mut c_char, tq: *const c_void)
                             );
                         }
                     }
-                    2 => {
+                    UNARY => {
                         let mut cli = clients.lock().unwrap().get(&cmd.key).unwrap().clone();
                         tokio::spawn(async move {
                             let task = task.clone();
@@ -191,10 +207,10 @@ pub extern "C" fn lib_nonblocking_ffi_init(_cfg: *mut c_char, tq: *const c_void)
                             let buf = EncodedBytes(
                                 vec.as_mut_slice().as_mut_ptr() as *mut c_char,
                                 vec.len(),
+                                false,
                             );
                             cli.ready().await.unwrap();
-                            let pp = cmd.path.unwrap();
-                            let path = PathAndQuery::from_str(&pp).unwrap();
+                            let path = PathAndQuery::from_str(cmd.path.as_ref().unwrap()).unwrap();
                             let res = cli.unary(tonic::Request::new(buf), path, MyCodec).await;
                             unsafe {
                                 if let Ok(mut res) = res {
@@ -215,7 +231,7 @@ pub extern "C" fn lib_nonblocking_ffi_init(_cfg: *mut c_char, tq: *const c_void)
                             }
                         });
                     }
-                    3 => {
+                    NEW_STREAM => {
                         let obj_cnt = obj_cnt.clone();
                         let clients = clients.clone();
                         let streams = streams.clone();
@@ -226,42 +242,15 @@ pub extern "C" fn lib_nonblocking_ffi_init(_cfg: *mut c_char, tq: *const c_void)
                             let send_stream =
                                 tokio_stream::wrappers::UnboundedReceiverStream::new(send_rx);
                             let (recv_tx, mut recv_rx) = mpsc::unbounded_channel::<TaskHandle>();
-                            let pp = cmd.path.unwrap();
-                            let path = PathAndQuery::from_str(&pp).unwrap();
-                            let mut stream = cli
-                                .streaming(tonic::Request::new(send_stream), path, MyCodec)
-                                .await
-                                .unwrap()
-                                .into_inner();
-                            let id = format!("stream-{}", obj_cnt.fetch_add(1, Ordering::SeqCst));
-                            tokio::spawn(async move {
-                                while let Some(task) = recv_rx.recv().await {
-                                    if let Some(res) = stream.message().await.unwrap() {
-                                        unsafe {
-                                            ngx_http_lua_nonblocking_ffi_respond(
-                                                task.0,
-                                                0,
-                                                res.0,
-                                                res.1 as i32,
-                                            );
-                                        }
-                                    } else {
-                                        unsafe {
-                                            ngx_http_lua_nonblocking_ffi_respond(
-                                                task.0,
-                                                1,
-                                                std::ptr::null_mut(),
-                                                0,
-                                            );
-                                        }
-                                    }
-                                }
-                            });
+                            let path = PathAndQuery::from_str(cmd.path.as_ref().unwrap()).unwrap();
+                            cli.ready().await.unwrap();
                             unsafe {
+                                let id =
+                                    format!("stream-{}", obj_cnt.fetch_add(1, Ordering::SeqCst));
                                 let res = libc::malloc(id.len());
                                 libc::memcpy(res, id.as_ptr() as *const c_void, id.len());
                                 let len = id.len();
-                                streams.lock().unwrap().insert(id, (send_tx, recv_tx));
+                                streams.lock().unwrap().insert(id, (Some(send_tx), recv_tx));
                                 ngx_http_lua_nonblocking_ffi_respond(
                                     task.0,
                                     0,
@@ -269,13 +258,48 @@ pub extern "C" fn lib_nonblocking_ffi_init(_cfg: *mut c_char, tq: *const c_void)
                                     len as i32,
                                 );
                             }
+                            let mut stream = cli
+                                .streaming(tonic::Request::new(send_stream), path, MyCodec)
+                                .await
+                                .unwrap()
+                                .into_inner();
+
+                            while let Some(task) = recv_rx.recv().await {
+                                if let Some(res) = stream.message().await.unwrap() {
+                                    unsafe {
+                                        ngx_http_lua_nonblocking_ffi_respond(
+                                            task.0,
+                                            0,
+                                            res.0,
+                                            res.1 as i32,
+                                        );
+                                    }
+                                } else {
+                                    unsafe {
+                                        ngx_http_lua_nonblocking_ffi_respond(
+                                            task.0,
+                                            0,
+                                            std::ptr::null_mut(),
+                                            0,
+                                        );
+                                    }
+                                }
+                            }
                         });
                     }
-                    4 => {
+                    STREAM_SEND => {
                         let (send_tx, _) = streams.lock().unwrap().get(&cmd.key).unwrap().clone();
+                        let send_tx = send_tx.unwrap();
                         let mut vec = cmd.payload.unwrap().0;
-                        let buf =
-                            EncodedBytes(vec.as_mut_slice().as_mut_ptr() as *mut c_char, vec.len());
+                        let cbuf = unsafe { libc::malloc(vec.len()) };
+                        unsafe {
+                            libc::memcpy(
+                                cbuf,
+                                vec.as_mut_slice().as_mut_ptr() as *const c_void,
+                                vec.len(),
+                            )
+                        };
+                        let buf = EncodedBytes(cbuf as *mut c_char, vec.len(), true);
                         unsafe {
                             ngx_http_lua_nonblocking_ffi_respond(
                                 task.0,
@@ -285,13 +309,25 @@ pub extern "C" fn lib_nonblocking_ffi_init(_cfg: *mut c_char, tq: *const c_void)
                             );
                         }
                     }
-                    5 => {
+                    STREAM_RECV => {
                         let (_, recv_tx) = streams.lock().unwrap().get(&cmd.key).unwrap().clone();
                         let task = task.clone();
                         recv_tx.send(task).unwrap();
                     }
-                    6 => {
+                    CLOSE_STREAM => {
                         streams.lock().unwrap().remove(&cmd.key);
+                        unsafe {
+                            ngx_http_lua_nonblocking_ffi_respond(
+                                task.0,
+                                0,
+                                std::ptr::null_mut(),
+                                0,
+                            );
+                        }
+                    }
+                    CLOSE_SEND => {
+                        let (_, recv_tx) = streams.lock().unwrap().remove(&cmd.key).unwrap();
+                        streams.lock().unwrap().insert(cmd.key, (None, recv_tx));
                         unsafe {
                             ngx_http_lua_nonblocking_ffi_respond(
                                 task.0,
