@@ -88,7 +88,7 @@ class State:
             r = C.ngx_http_lua_nonblocking_ffi_get_req(task, ffi.NULL)
             self.taskq.put((task, r))
 
-def init(cfg, cfg_len, tq):
+def init(cfg, tq):
     data = ffi.string(ffi.cast("char*", cfg))
     cfg = json.loads(data)
     st = State(cfg)
