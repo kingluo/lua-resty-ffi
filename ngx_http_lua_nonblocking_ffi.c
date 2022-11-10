@@ -133,7 +133,7 @@ ngx_http_lua_nonblocking_ffi_resume(ngx_http_request_t *r)
     vm = ngx_http_lua_get_lua_vm(r, ctx);
     nreqs = c->requests;
 
-    rc = ngx_http_lua_run_thread(vm, r, ctx, 2);
+    rc = ngx_http_lua_run_thread(vm, r, ctx, 3);
 
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "lua run thread returned %d", rc);
@@ -189,6 +189,11 @@ ngx_http_lua_nonblocking_ffi_event_handler(ngx_event_t *ev)
     }
 
     lua_pushboolean(L, nonblocking_ffi_ctx->rc ? 0 : 1);
+
+    if (nonblocking_ffi_ctx->rc) {
+        lua_pushinteger(L, nonblocking_ffi_ctx->rc);
+    }
+
     if (nonblocking_ffi_ctx->rsp) {
         if (nonblocking_ffi_ctx->rsp_len) {
             lua_pushlstring(L, nonblocking_ffi_ctx->rsp, nonblocking_ffi_ctx->rsp_len);
@@ -196,6 +201,10 @@ ngx_http_lua_nonblocking_ffi_event_handler(ngx_event_t *ev)
             lua_pushstring(L, nonblocking_ffi_ctx->rsp);
         }
     } else {
+        lua_pushnil(L);
+    }
+
+    if (!nonblocking_ffi_ctx->rc) {
         lua_pushnil(L);
     }
 
