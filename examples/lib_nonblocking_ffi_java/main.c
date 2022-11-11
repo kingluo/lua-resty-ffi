@@ -68,14 +68,14 @@ int lib_nonblocking_ffi_init(char* cfg, void *tq)
         return 1;
     }
 
-    mid = (*env)->GetStaticMethodID(env, cls, method, "(JLjava/lang/String;)I");
+    mid = (*env)->GetStaticMethodID(env, cls, method, "(Ljava/lang/String;J)I");
     if (mid == NULL) {
         printf("Failed to find main function\n");
         return 1;
     }
 
     jstring jcfg = (*env)->NewStringUTF(env, cfg_str);
-    int rc = (*env)->CallStaticIntMethod(env, cls, mid, (jlong)tq, jcfg);
+    int rc = (*env)->CallStaticIntMethod(env, cls, mid, jcfg, (jlong)tq);
     (*env)->DeleteLocalRef(env, jcfg);
 
     /* Check for errors. */

@@ -25,7 +25,7 @@ class PollThread implements Runnable {
 
 public class App
 {
-    public static int init(long tq, String configStr) {
+    public static int init(String cfg, long tq) {
         var pollThread = new PollThread(tq);
         Thread thread = new Thread(pollThread);
         thread.setDaemon(true);

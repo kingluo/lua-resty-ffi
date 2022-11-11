@@ -64,11 +64,12 @@ class PollThread implements Runnable {
 
 public class App
 {
-    public static void init(long tq)
+    public static int init(String cfg, long tq)
     {
         var pollThread = new PollThread(tq);
         Thread thread = new Thread(pollThread);
         thread.setDaemon(true);
         thread.start();
+        return 0;
     }
 }
