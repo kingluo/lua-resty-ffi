@@ -58,16 +58,16 @@ func lib_nonblocking_ffi_init(cfg_cstr *C.char, tq unsafe.Pointer) C.int {
 		go func() {
 			for {
 				task := C.ngx_http_lua_nonblocking_ffi_task_poll(tq)
-                if task == nil {
-                    break
-                }
+				if task == nil {
+					break
+				}
 				var rlen C.int
 				r := C.ngx_http_lua_nonblocking_ffi_get_req(task, &rlen)
 				res := C.malloc(C.ulong(rlen))
 				C.memcpy(res, unsafe.Pointer(r), C.ulong(rlen))
 				C.ngx_http_lua_nonblocking_ffi_respond(task, 0, (*C.char)(res), rlen)
 			}
-            log.Println("exit go echo runtime")
+			log.Println("exit go echo runtime")
 		}()
 	}
 	return 0

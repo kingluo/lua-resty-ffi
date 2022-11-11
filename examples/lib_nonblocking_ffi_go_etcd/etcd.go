@@ -99,10 +99,10 @@ func (state *State) put(p *Put) {
 }
 
 //export lib_nonblocking_ffi_init
-func lib_nonblocking_ffi_init(cfg *C.char, cfg_len C.int, tq unsafe.Pointer) C.int {
+func lib_nonblocking_ffi_init(cfg *C.char, tq unsafe.Pointer) C.int {
 	var etcdNodes []string
-	data := C.GoBytes(unsafe.Pointer(cfg), cfg_len)
-	err := json.Unmarshal(data, &etcdNodes)
+	data := C.GoString(cfg)
+	err := json.Unmarshal([]byte(data), &etcdNodes)
 	if err != nil {
 		log.Println("invalid cfg:", err)
 		return -1
