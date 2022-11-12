@@ -145,9 +145,7 @@ pub extern "C" fn lib_nonblocking_ffi_init(_cfg: *mut c_char, tq: *const c_void)
 
     let rt = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
-        .worker_threads(4)
         .thread_name("grpc-client-thread")
-        .thread_stack_size(3 * 1024 * 1024)
         .build()
         .unwrap();
 
