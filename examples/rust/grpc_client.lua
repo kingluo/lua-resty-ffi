@@ -12,6 +12,19 @@ local STREAM_RECV = 7
 
 local _M = {}
 
+local objs = {}
+
+ngx.timer.every(3, function()
+    if #objs > 0 then
+        for _, s in ipairs(objs) do
+            local ok = s:close()
+            assert(ok)
+            print(s.conn, ", ", s.stream)
+        end
+        objs = {}
+    end
+end)
+
 local pb = {
     _info = {},
     _pb = require("pb"),
@@ -39,7 +52,55 @@ local pb = {
     end,
 }
 
+function setmt__gc(t, mt)
+    local prox = newproxy(true)
+    getmetatable(prox).__gc = function() mt.__gc(t) end
+    t[prox] = true
+    return setmetatable(t, mt)
+end
+
+local stream_meta = {
+    __gc = function(self)
+        if self.closed then
+            return
+        end
+        table.insert(objs, self)
+    end,
+    __index = {
+        send = function(self, req)
+            return grpc:call(cjson.encode({
+                cmd = STREAM_SEND,
+                key = self.stream,
+                payload = ngx.encode_base64(pb:encode(self.path, req)),
+            }))
+        end,
+        close_send = function(self)
+            return grpc:call(cjson.encode({
+                cmd = CLOSE_SEND,
+                key = self.stream,
+            }))
+        end,
+        recv = function(self)
+            local ok, res = grpc:call(cjson.encode({
+                cmd = STREAM_RECV,
+                key = self.stream,
+            }))
+            return ok, (ok and res) and pb:decode(self.path, res) or nil
+        end,
+        close = function(self)
+            self.closed = true
+            return grpc:call(cjson.encode({cmd = CLOSE_STREAM, key = self.stream}))
+        end,
+    },
+}
+
 local meta = {
+    __gc = function(self)
+        if self.closed then
+            return
+        end
+        table.insert(objs, self)
+    end,
     __index = {
         unary = function(self, path, req)
             local ok, res = grpc:call(cjson.encode({
@@ -51,9 +112,20 @@ local meta = {
             assert(ok)
             return ok, ok and pb:decode(path, res) or nil
         end,
+        new_stream = function(self, path)
+            local ok, res = grpc:call(cjson.encode({
+                cmd = NEW_STREAM,
+                key = self.conn,
+                path = path,
+            }))
+            return ok, ok and setmt__gc({
+                stream = res,
+                path = path,
+                closed = false,
+            }, stream_meta) or nil
+        end,
         close = function(self)
-            local ok = grpc:close(cjson.encode({cmd = CLOSE_CONNECTION, key = self.conn}))
-            assert(ok)
+            return grpc:call(cjson.encode({cmd = CLOSE_CONNECTION, key = self.conn}))
         end,
     }
 }
@@ -73,7 +145,7 @@ function _M.connect(uri, opts)
         priv_key = opts.priv_key,
     }
     local ok, conn = grpc:connect(cjson.encode(cmd))
-    return ok, ok and setmetatable({conn = conn}, meta) or nil
+    return ok, ok and setmt__gc({conn = conn, closed = false}, meta) or nil
 end
 
 function _M.readfile(file)
