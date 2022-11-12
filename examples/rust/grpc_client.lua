@@ -62,9 +62,25 @@ function _M.loadfile(file)
     return pb:loadfile(file)
 end
 
-function _M.connect(uri)
-    local ok, conn = grpc:connect(cjson.encode({cmd = NEW_CONNECTION, key = uri}))
+function _M.connect(uri, opts)
+    opts = opts or {}
+    local cmd = {
+        cmd = NEW_CONNECTION,
+        key = uri,
+        ca = opts.ca,
+        host = opts.host,
+        cert = opts.cert,
+        priv_key = opts.priv_key,
+    }
+    local ok, conn = grpc:connect(cjson.encode(cmd))
     return ok, ok and setmetatable({conn = conn}, meta) or nil
+end
+
+function _M.readfile(file)
+    local f = assert(io.open(file, "r"))
+    local content = f:read("*all")
+    f:close()
+    return content
 end
 
 return _M

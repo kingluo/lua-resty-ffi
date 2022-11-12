@@ -10,6 +10,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use tokio::sync::mpsc;
+use tonic::transport::{Certificate, Channel, ClientTlsConfig, Identity, Uri};
 use tonic::{
     codec::{Codec, DecodeBuf, Decoder, EncodeBuf, Encoder},
     Status,
@@ -49,6 +50,10 @@ const STREAM_RECV: i32 = 7;
 pub struct GrpcCommand {
     cmd: i32,
     key: String,
+    host: Option<String>,
+    ca: Option<String>,
+    cert: Option<String>,
+    priv_key: Option<String>,
     path: Option<String>,
     payload: Option<Base64>,
 }
@@ -104,7 +109,9 @@ impl Encoder for MyCodec {
         let slice = unsafe { slice::from_raw_parts(item.0 as *const u8, item.1) };
         dst.put_slice(slice);
         if item.2 {
-            unsafe{ libc::free(item.0 as *mut c_void); }
+            unsafe {
+                libc::free(item.0 as *mut c_void);
+            }
         }
         Ok(())
     }
@@ -123,7 +130,11 @@ impl Decoder for MyCodec {
             buf.advance(len);
             Ok(Some(EncodedBytes(cbuf as *mut c_char, len, false)))
         } else {
-            Ok(Some(EncodedBytes(std::ptr::null_mut() as *mut c_char, 0, false)))
+            Ok(Some(EncodedBytes(
+                std::ptr::null_mut() as *mut c_char,
+                0,
+                false,
+            )))
         }
     }
 }
@@ -158,7 +169,7 @@ pub extern "C" fn lib_nonblocking_ffi_init(_cfg: *mut c_char, tq: *const c_void)
                 let req = unsafe { ngx_http_lua_nonblocking_ffi_get_req(task.0, ptr) };
 
                 let sli = unsafe { std::slice::from_raw_parts(req as *const u8, *ptr as usize) };
-                let cmd: GrpcCommand = serde_json::from_slice(sli).unwrap();
+                let mut cmd: GrpcCommand = serde_json::from_slice(sli).unwrap();
                 //println!("cmd: {:?}", cmd);
 
                 match cmd.cmd {
@@ -167,12 +178,43 @@ pub extern "C" fn lib_nonblocking_ffi_init(_cfg: *mut c_char, tq: *const c_void)
                         let clients = clients.clone();
                         tokio::spawn(async move {
                             let task = task.clone();
-                            let cli = tonic::transport::Endpoint::new(cmd.key)
-                                .unwrap()
-                                .connect()
-                                .await
-                                .unwrap();
-                            let cli = tonic::client::Grpc::new(cli);
+                            if !cmd.key.starts_with("http://") && !cmd.key.starts_with("https://") {
+                                cmd.key = format!("http://{}", cmd.key);
+                            }
+
+                            let cli = if cmd.ca.is_some() {
+                                let ca = Certificate::from_pem(cmd.ca.unwrap());
+                                let mut tls = ClientTlsConfig::new().ca_certificate(ca);
+
+                                if cmd.host.is_some() {
+                                    tls = tls.domain_name(cmd.host.unwrap());
+                                }
+
+                                if cmd.cert.is_some() {
+                                    let identity = Identity::from_pem(
+                                        cmd.cert.unwrap(),
+                                        cmd.priv_key.unwrap(),
+                                    );
+                                    tls = tls.identity(identity);
+                                }
+
+                                let channel = Channel::builder(Uri::from_str(&cmd.key).unwrap())
+                                    .tls_config(tls)
+                                    .unwrap()
+                                    .connect()
+                                    .await
+                                    .unwrap();
+
+                                tonic::client::Grpc::new(channel)
+                            } else {
+                                let ep = tonic::transport::Endpoint::new(cmd.key)
+                                    .unwrap()
+                                    .connect()
+                                    .await
+                                    .unwrap();
+                                tonic::client::Grpc::new(ep)
+                            };
+
                             let id = format!("cli-{}", obj_cnt.fetch_add(1, Ordering::SeqCst));
                             unsafe {
                                 let res = libc::malloc(id.len());
