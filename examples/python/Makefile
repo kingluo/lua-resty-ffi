@@ -1,7 +1,7 @@
 .PHONY: build
 build:
 	apt -y install python3-dev libpython3-dev
-	gcc $$(python3-config --cflags) $$(python3-config --ldflags) -o libffi_python3.so main.c -lpython3.8 -fPIC -shared
+	gcc $$(python3-config --cflags) $$(python3-config --ldflags) -o libffi_python3.so loader.c -lpython3.8 -fPIC -shared
 
 .PHONY: run
 run:
