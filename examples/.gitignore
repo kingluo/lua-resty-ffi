@@ -1,3 +1,2 @@
 *_temp/
-logs/*
-!logs/.gitkeep
+logs

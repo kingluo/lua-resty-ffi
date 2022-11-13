@@ -1,5 +1,4 @@
 *_temp/
 *.so
 *.h
-logs/*
-!logs/.gitkeep
+logs

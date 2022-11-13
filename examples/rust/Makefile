@@ -5,6 +5,7 @@ build:
 
 .PHONY: run
 run:
+	@bash -c '[[ -d logs ]] || mkdir logs'
 	LD_LIBRARY_PATH=$(PWD)/grpc_client/target/release:$(PWD)/echo/target/release /opt/nffi/nginx/sbin/nginx -p $(PWD) -c nginx.conf
 
 .PHONY: test
