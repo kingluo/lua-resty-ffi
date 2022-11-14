@@ -19,7 +19,6 @@ ngx.timer.every(3, function()
         for _, s in ipairs(objs) do
             local ok = s:close()
             assert(ok)
-            print(s.conn, ", ", s.stream)
         end
         objs = {}
     end
@@ -125,6 +124,7 @@ local meta = {
             }, stream_meta) or nil
         end,
         close = function(self)
+            self.closed = true
             return grpc:call(cjson.encode({cmd = CLOSE_CONNECTION, key = self.conn}))
         end,
     }
