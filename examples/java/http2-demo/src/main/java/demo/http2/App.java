@@ -1,6 +1,11 @@
 package demo.http2;
 
-import resty.NgxHttpLuaNonblockingFFI;
+import jnr.ffi.LibraryLoader;
+import jnr.ffi.*;
+import jnr.ffi.byref.*;
+import jnr.ffi.annotations.In;
+import jnr.ffi.annotations.Out;
+
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
@@ -8,7 +13,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpClient.Version;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
+
 import com.google.gson.Gson;
 
 class Request {
@@ -24,6 +31,16 @@ class Response {
 }
 
 class PollThread implements Runnable {
+    public interface FFI {
+        Pointer ngx_http_lua_nonblocking_ffi_task_poll(@In Pointer tq);
+        Pointer ngx_http_lua_nonblocking_ffi_get_req(@In Pointer task, @Out IntByReference len);
+        void ngx_http_lua_nonblocking_ffi_respond(@In Pointer tsk, @In int rc, @In Pointer rsp, @In int rsp_len);
+    }
+
+    public interface Libc {
+        Pointer malloc(int size);
+    }
+
     public long tq;
 
     public PollThread(long tq) {
@@ -31,14 +48,27 @@ class PollThread implements Runnable {
     }
 
     public void run() {
+        Libc libc = LibraryLoader.create(Libc.class).load("c");
+        FFI ffi = LibraryLoader.create(FFI.class).load(LibraryLoader.DEFAULT_LIBRARY);
+        var tq = Pointer.wrap(jnr.ffi.Runtime.getSystemRuntime(), this.tq);
+        IntByReference ap = new IntByReference();
+
         var httpClient = HttpClient.newBuilder().version(Version.HTTP_2).build();
         var gson = new Gson();
 
         while(true) {
-            var task = NgxHttpLuaNonblockingFFI.task_poll(tq);
-            var req = NgxHttpLuaNonblockingFFI.get_req(task);
+            var task = ffi.ngx_http_lua_nonblocking_ffi_task_poll(tq);
+            if (task == null) {
+                break;
+            }
+            var req = ffi.ngx_http_lua_nonblocking_ffi_get_req(task, ap);
+            var len = ap.intValue();
 
-            var data = gson.fromJson(new String(req), Request.class);
+            final byte[] bytes = new byte[len];
+            req.get(0, bytes, 0, len);
+            String str = new String(bytes, StandardCharsets.UTF_8);
+
+            var data = gson.fromJson(str, Request.class);
             var builder = HttpRequest.newBuilder().uri(URI.create(data.uri));
             builder.method(data.method, BodyPublishers.ofString(data.body));
             if (data.headers != null) {
@@ -56,7 +86,12 @@ class PollThread implements Runnable {
                     });
                     rsp.body = res.body();
                     String json = gson.toJson(rsp);
-                    NgxHttpLuaNonblockingFFI.respond(task, 0, json.getBytes());
+
+                    byte[] arr = json.getBytes();
+                    int rspLen = arr.length;
+                    var rspStr = libc.malloc(rspLen);
+                    rspStr.put(0, arr, 0, rspLen);
+                    ffi.ngx_http_lua_nonblocking_ffi_respond(task, 0, rspStr, rspLen);
                 });
         }
     }

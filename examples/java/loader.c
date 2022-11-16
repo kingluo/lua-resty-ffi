@@ -1,10 +1,6 @@
 #include <jni.h>
 #include <string.h>
 #include <stdlib.h>
-#include <pthread.h>
-extern void* ngx_http_lua_nonblocking_ffi_task_poll(void *p);
-extern char* ngx_http_lua_nonblocking_ffi_get_req(void *tsk, int *len);
-extern void ngx_http_lua_nonblocking_ffi_respond(void *tsk, int rc, char* rsp, int rsp_len);
 
 static JavaVM *vm;
 static JNIEnv *env;
@@ -48,7 +44,7 @@ int lib_nonblocking_ffi_init(char* cfg, void *tq)
 
         res = JNI_CreateJavaVM(&vm, (void **)&env, &vm_args);
         if (res != JNI_OK) {
-            printf("Failed to create Java VMn");
+            printf("Failed to create Java VM\n");
             return 1;
         }
     }
@@ -84,79 +80,4 @@ int lib_nonblocking_ffi_init(char* cfg, void *tq)
     }
 
     return rc;
-}
-
-static const char *JNIT_CLASS = "resty/NgxHttpLuaNonblockingFFI";
-
-static jlong c_nonblocking_ffi_task_poll(JNIEnv *env, jobject obj, jlong p)
-{
-    jlong ret = (jlong) ngx_http_lua_nonblocking_ffi_task_poll((void*) p);
-    return ret;
-}
-
-static jbyteArray c_nonblocking_ffi_get_req(JNIEnv *env, jobject obj, jlong p)
-{
-    int len;
-    char* req = ngx_http_lua_nonblocking_ffi_get_req((void*) p, &len);
-    jbyteArray bytes = (*env)->NewByteArray(env, len);
-    (*env)->SetByteArrayRegion(env, bytes, 0, len, (jbyte*) req);
-    return bytes;
-}
-
-static void c_nonblocking_ffi_respond(JNIEnv *env, jobject obj, jlong p, jint rc, jbyteArray barr)
-{
-    char* rtn = NULL;
-    jsize alen = (*env)->GetArrayLength(env, barr);
-    jbyte* ba = (*env)->GetByteArrayElements(env, barr, JNI_FALSE);
-    if (alen > 0) {
-        rtn = (char*) malloc(alen);
-        memcpy(rtn, ba, alen);
-        rtn[alen] = 0;
-    }
-    ngx_http_lua_nonblocking_ffi_respond((void*) p, rc, rtn, alen);
-}
-
-static JNINativeMethod funcs[] = {
-    { "task_poll", "(J)J", (void *)&c_nonblocking_ffi_task_poll },
-    { "get_req", "(J)[B", (void *)&c_nonblocking_ffi_get_req },
-    { "respond", "(JI[B)V", (void *)&c_nonblocking_ffi_respond },
-};
-
-JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved)
-{
-    JNIEnv *env;
-    jclass  cls;
-    jint    res;
-
-    (void)reserved;
-
-    if ((*vm)->GetEnv(vm, (void **)&env, JNI_VERSION_1_8) != JNI_OK)
-        return -1;
-
-    cls = (*env)->FindClass(env, JNIT_CLASS);
-    if (cls == NULL)
-        return -1;
-
-    res = (*env)->RegisterNatives(env, cls, funcs, sizeof(funcs)/sizeof(*funcs));
-    if (res != 0)
-        return -1;
-
-    return JNI_VERSION_1_8;
-}
-
-JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved)
-{
-    JNIEnv *env;
-    jclass  cls;
-
-    (void)reserved;
-
-    if ((*vm)->GetEnv(vm, (void **)&env, JNI_VERSION_1_8) != JNI_OK)
-        return;
-
-    cls = (*env)->FindClass(env, JNIT_CLASS);
-    if (cls == NULL)
-        return;
-
-    (*env)->UnregisterNatives(env, cls);
 }
