@@ -50,6 +50,16 @@ local mt = {
     __call = post,
 }
 
+local pin_libs = {}
+
+local function ffi_load(lib, is_global, is_pin)
+    local handle = ffi.load(lib, is_global)
+    if handle and is_pin then
+        pin_libs[lib] = handle
+    end
+    return handle
+end
+
 ngx.load_nonblocking_ffi = function(lib, cfg, opts)
     local max_queue = 65536
     local is_global = false
@@ -70,11 +80,12 @@ ngx.load_nonblocking_ffi = function(lib, cfg, opts)
         return runtimes[key]
     end
 
+    local is_pin = (not opts) or (not opts.unpin)
     local tq = C.ngx_nonblocking_ffi_create_task_queue(max_queue)
     local nffi = setmetatable({
         finished = false,
         key = key,
-        handle = ffi.load(lib, is_global),
+        handle = ffi_load(lib, is_global, is_pin),
         tq = tq,
         __unload = unload,
     }, mt)

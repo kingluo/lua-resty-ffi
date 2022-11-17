@@ -13,6 +13,7 @@ typedef struct {
 
 static int init(state_t *state)
 {
+    int reload_module = 0;
     int rc = 1;
     char* module = state->module;
     const char* func = state->func;
@@ -24,6 +25,12 @@ static int init(state_t *state)
         dirlen = strlen(module) - strlen(last);
         dir = strndup(module, dirlen);
         module = last + 1;
+    }
+
+    int lastpos = strlen(module) - 1;
+    if (module[lastpos] == '?') {
+        module[lastpos] = 0;
+        reload_module = 1;
     }
 
     PyObject *pName, *pModule, *pFunc;
@@ -42,7 +49,13 @@ static int init(state_t *state)
     pName = PyUnicode_DecodeFSDefault(module);
     /* Error checking of pName left out */
 
-    pModule = PyImport_Import(pName);
+    pModule = PyImport_GetModule(pName);
+    if (pModule == NULL) {
+        pModule = PyImport_Import(pName);
+    } else if (reload_module) {
+        pModule = PyImport_ReloadModule(pModule);
+    }
+
     Py_DECREF(pName);
 
     if (pModule != NULL) {
@@ -127,4 +140,11 @@ int lib_nonblocking_ffi_init(char* cfg, void *tq)
     free(tofree);
 
     return init(&state);
+}
+
+__attribute__((destructor)) void ffi_python_fini(void) {
+    if (mainThreadState) {
+        PyEval_RestoreThread(mainThreadState);
+        Py_Finalize();
+    }
 }

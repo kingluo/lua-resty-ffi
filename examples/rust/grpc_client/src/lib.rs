@@ -381,6 +381,9 @@ pub extern "C" fn lib_nonblocking_ffi_init(_cfg: *mut c_char, tq: *const c_void)
                 }
             }
         });
+
+        println!("shutdown tokio runtime");
+        rt.shutdown_background();
     });
 
     return 0;
