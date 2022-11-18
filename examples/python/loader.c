@@ -100,21 +100,6 @@ end:
     return rc;
 }
 
-char* nth_strchr(const char* s, int c, int n)
-{
-    int c_count;
-    char* nth_ptr;
-
-    for (c_count=1, nth_ptr = strchr(s, c);
-         nth_ptr != NULL && c_count < n && c != 0;
-         c_count++)
-    {
-         nth_ptr = strchr(nth_ptr+1, c);
-    }
-
-    return nth_ptr;
-}
-
 int lib_nonblocking_ffi_init(char* cfg, void *tq)
 {
     if (mainThreadState == NULL) {
@@ -125,19 +110,10 @@ int lib_nonblocking_ffi_init(char* cfg, void *tq)
     state_t state = {0};
     state.tq = tq;
 
-    char *token, *str, *tofree;
-    tofree = str = strdup(cfg);
-    token = strsep(&str, ",");
-    state.module = strdup(token);
-    token = strsep(&str, ",");
-    state.func = strdup(token);
-
-    char* pos = nth_strchr(cfg, (int)',', 2);
-    if (pos) {
-        state.cfg = pos + 1;
-    }
-
-    free(tofree);
+    char* str = cfg;
+    state.module = strsep(&str, ",");
+    state.func = strsep(&str, ",");
+    state.cfg = str;
 
     return init(&state);
 }

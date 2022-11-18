@@ -1,9 +1,9 @@
 .PHONY: build
 build:
 	apt -y install openjdk-17-jdk
-	gcc -O2 -shared -fPIC -o libffi_java.so loader.c -I../../ -I/usr/lib/jvm/java-17-openjdk-amd64/include/ -I/usr/lib/jvm/java-17-openjdk-amd64/include/linux/ -L/usr/lib/jvm/java-17-openjdk-amd64/lib/ -L/usr/lib/jvm/java-17-openjdk-amd64/lib/server/ -ljli -ljvm -lpthread
-	cd http2-demo; mvn -DskipTests=true -Dmaven.test.skip=true package
-	cd echo-demo; mvn -DskipTests=true -Dmaven.test.skip=true package
+	gcc -O2 -shared -fPIC -o libffi_java.so loader.c -I/usr/lib/jvm/java-17-openjdk-amd64/include/ -I/usr/lib/jvm/java-17-openjdk-amd64/include/linux/ -L/usr/lib/jvm/java-17-openjdk-amd64/lib/ -L/usr/lib/jvm/java-17-openjdk-amd64/lib/server/ -ljli -ljvm -pthread
+	cd http2-demo; mvn -q -DskipTests=true -Dmaven.test.skip=true package
+	cd echo-demo; mvn -q -DskipTests=true -Dmaven.test.skip=true package
 
 .PHONY: run
 run:

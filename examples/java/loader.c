@@ -5,21 +5,6 @@
 static JavaVM *vm;
 static JNIEnv *env;
 
-char* nth_strchr(const char* s, int c, int n)
-{
-    int c_count;
-    char* nth_ptr;
-
-    for (c_count=1, nth_ptr = strchr(s, c);
-            nth_ptr != NULL && c_count < n && c != 0;
-            c_count++)
-    {
-        nth_ptr = strchr(nth_ptr+1, c);
-    }
-
-    return nth_ptr;
-}
-
 int lib_nonblocking_ffi_init(char* cfg, void *tq)
 {
     if (vm == NULL) {
@@ -49,11 +34,15 @@ int lib_nonblocking_ffi_init(char* cfg, void *tq)
         }
     }
 
-    char* sep1 = nth_strchr(cfg, (int)',', 1);
-    char* class = strndup(cfg, sep1-cfg);
-    char* sep2 = nth_strchr(cfg, (int)',', 2);
-    char* method = strndup(sep1+1, sep2-sep1-1);
-    char* cfg_str = sep2 + 1;
+    char* str = cfg;
+    char* class = strsep(&str, ",");
+    for (char* tmp = class; *tmp != 0; tmp++) {
+        if (*tmp == '.') {
+            *tmp = '/';
+        }
+    }
+    char* method = strsep(&str, ",");
+    char* cfg_str= str;
 
     jclass          cls;
     jmethodID       mid;

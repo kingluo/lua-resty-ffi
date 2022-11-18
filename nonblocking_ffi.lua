@@ -7,6 +7,7 @@ local runtimes = {}
 
 ffi.cdef[[
 void *malloc(size_t size);
+void free(void *ptr);
 int lib_nonblocking_ffi_init(char* cfg, void *tq);
 void* ngx_nonblocking_ffi_create_task_queue(int max_queue);
 int ngx_http_lua_nonblocking_ffi_task_post(void *r, void* tq, char* req, int req_len);
@@ -96,6 +97,9 @@ ngx.load_nonblocking_ffi = function(lib, cfg, opts)
         ffi.copy(buf, cfg)
     end
     local rc = nffi.handle.lib_nonblocking_ffi_init(buf, tq)
+    if buf then
+        C.free(buf)
+    end
     if rc == 0 then
         runtimes[key] = nffi
         return nffi
