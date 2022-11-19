@@ -1,3 +1,5 @@
+NGINX ?= /opt/resty_ffi/nginx/sbin/nginx
+
 .PHONY: build
 build:
 	apt -y install openjdk-17-jdk
@@ -8,7 +10,7 @@ build:
 .PHONY: run
 run:
 	@bash -c '[[ -d logs ]] || mkdir logs'
-	CLASSPATH=$(PWD)/http2-demo/target/http2-demo-1.0-SNAPSHOT-jar-with-dependencies.jar:$(PWD)/echo-demo/target/echo-demo-1.0-SNAPSHOT-jar-with-dependencies.jar LD_LIBRARY_PATH=/usr/lib/jvm/java-17-openjdk-amd64/lib/:/usr/lib/jvm/java-11-openjdk-amd64/lib/server:$(PWD) /opt/nffi/nginx/sbin/nginx -p $(PWD) -c nginx.conf
+	CLASSPATH=$(PWD)/http2-demo/target/http2-demo-1.0-SNAPSHOT-jar-with-dependencies.jar:$(PWD)/echo-demo/target/echo-demo-1.0-SNAPSHOT-jar-with-dependencies.jar LD_LIBRARY_PATH=/usr/lib/jvm/java-17-openjdk-amd64/lib/:/usr/lib/jvm/java-11-openjdk-amd64/lib/server:$(PWD) $(NGINX) -p $(PWD) -c nginx.conf
 
 .PHONY: test
 test:

@@ -54,7 +54,7 @@ func libffi_init(cfg_cstr *C.char, tq unsafe.Pointer) C.int {
 		time.Sleep(5 * time.Second)
 		log.Println("wait end")
 	} else {
-		log.Println("start nffi-echo")
+		log.Println("start go echo runtime")
 		go func() {
 			for {
 				task := C.ngx_http_lua_ffi_task_poll(tq)

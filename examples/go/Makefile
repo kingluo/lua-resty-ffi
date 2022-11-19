@@ -1,3 +1,5 @@
+NGINX ?= /opt/resty_ffi/nginx/sbin/nginx
+
 .PHONY: build
 build:
 	go mod download
@@ -7,4 +9,9 @@ build:
 .PHONY: run
 run:
 	@bash -c '[[ -d logs ]] || mkdir logs'
-	LD_LIBRARY_PATH=$(PWD) /opt/nffi/nginx/sbin/nginx -p $(PWD) -c nginx.conf
+	LD_LIBRARY_PATH=$(PWD) $(NGINX) -p $(PWD) -c nginx.conf
+
+.PHONY: test
+test:
+	curl localhost:20000/echo
+	curl localhost:20000/etcd
