@@ -49,12 +49,16 @@ static int init(state_t *state)
     pName = PyUnicode_DecodeFSDefault(module);
     /* Error checking of pName left out */
 
+#if PY_VERSION_HEX >= 0x03080000
     pModule = PyImport_GetModule(pName);
     if (pModule == NULL) {
+#endif
         pModule = PyImport_Import(pName);
+#if PY_VERSION_HEX >= 0x03080000
     } else if (reload_module) {
         pModule = PyImport_ReloadModule(pModule);
     }
+#endif
 
     Py_DECREF(pName);
 

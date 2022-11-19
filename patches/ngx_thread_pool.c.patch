@@ -1,9 +1,9 @@
---- a/ngx_thread_pool.c	2021-11-05 13:06:14.000000000 +0800
-+++ b/ngx_thread_pool.c	2022-09-08 19:15:00.524040697 +0800
+--- nginx-1.21.4-orig/src/core/ngx_thread_pool.c        2021-11-05 13:06:14.000000000 +0800
++++ nginx-1.21.4/src/core/ngx_thread_pool.c     2022-11-19 15:18:47.182642566 +0800
 @@ -361,6 +361,26 @@
  }
- 
- 
+
+
 +void
 +ngx_thread_pool_notify_inject(void *data)
 +{
