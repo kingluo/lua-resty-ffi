@@ -3,9 +3,9 @@ ffi = FFI()
 ffi.cdef("""
 void* malloc(size_t);
 void *memcpy(void *dest, const void *src, size_t n);
-void* ngx_http_lua_nonblocking_ffi_task_poll(void *p);
-char* ngx_http_lua_nonblocking_ffi_get_req(void *tsk, int *len);
-void ngx_http_lua_nonblocking_ffi_respond(void *tsk, int rc, char* rsp, int rsp_len);
+void* ngx_http_lua_ffi_task_poll(void *p);
+char* ngx_http_lua_ffi_get_req(void *tsk, int *len);
+void ngx_http_lua_ffi_respond(void *tsk, int rc, char* rsp, int rsp_len);
 """)
 C = ffi.dlopen(None)
 
@@ -45,7 +45,7 @@ class State:
     def respond(self, task, data):
         res = C.malloc(len(data))
         C.memcpy(res, data.encode(), len(data))
-        C.ngx_http_lua_nonblocking_ffi_respond(task, 0, res, len(data))
+        C.ngx_http_lua_ffi_respond(task, 0, res, len(data))
 
     def consume(self):
         for msg in self.consumer:
@@ -75,7 +75,7 @@ class State:
             typ = req["type"]
             if typ == "produce":
                 self.produce(req["msg"])
-                C.ngx_http_lua_nonblocking_ffi_respond(task, 0, ffi.NULL, 0)
+                C.ngx_http_lua_ffi_respond(task, 0, ffi.NULL, 0)
             elif typ == "consume":
                 self.mutex.acquire()
                 try:
@@ -88,13 +88,13 @@ class State:
                 finally:
                     self.mutex.release()
             else:
-                C.ngx_http_lua_nonblocking_ffi_respond(task, -1, ffi.NULL, 0)
+                C.ngx_http_lua_ffi_respond(task, -1, ffi.NULL, 0)
             self.taskq.task_done()
 
     def poll(self, tq):
         while True:
-            task = C.ngx_http_lua_nonblocking_ffi_task_poll(ffi.cast("void*", tq))
-            r = C.ngx_http_lua_nonblocking_ffi_get_req(task, ffi.NULL)
+            task = C.ngx_http_lua_ffi_task_poll(ffi.cast("void*", tq))
+            r = C.ngx_http_lua_ffi_get_req(task, ffi.NULL)
             self.taskq.put((task, r))
 
 def init(cfg, tq):

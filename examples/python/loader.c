@@ -100,7 +100,7 @@ end:
     return rc;
 }
 
-int lib_nonblocking_ffi_init(char* cfg, void *tq)
+int libffi_init(char* cfg, void *tq)
 {
     if (mainThreadState == NULL) {
         Py_Initialize();

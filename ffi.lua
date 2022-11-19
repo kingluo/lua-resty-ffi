@@ -8,10 +8,10 @@ local runtimes = {}
 ffi.cdef[[
 void *malloc(size_t size);
 void free(void *ptr);
-int lib_nonblocking_ffi_init(char* cfg, void *tq);
-void* ngx_nonblocking_ffi_create_task_queue(int max_queue);
-int ngx_http_lua_nonblocking_ffi_task_post(void *r, void* tq, char* req, int req_len);
-int ngx_http_lua_nonblocking_ffi_task_finish(void *p);
+int libffi_init(char* cfg, void *tq);
+void* ngx_http_lua_ffi_create_task_queue(int max_queue);
+int ngx_http_lua_ffi_task_post(void *r, void* tq, char* req, int req_len);
+int ngx_http_lua_ffi_task_finish(void *p);
 ]]
 
 local function post(self, req)
@@ -25,7 +25,7 @@ local function post(self, req)
         buf = C.malloc(#req + 1)
         ffi.copy(buf, req)
     end
-    local ret = C.ngx_http_lua_nonblocking_ffi_task_post(get_request(), self.tq, buf, buf_len)
+    local ret = C.ngx_http_lua_ffi_task_post(get_request(), self.tq, buf, buf_len)
     if ret ~= 0 then
         return false, "post failed, queue full"
     end
@@ -36,7 +36,7 @@ local function unload(self)
     if not self.finished then
         self.finished = true
         self.handle = nil
-        C.ngx_http_lua_nonblocking_ffi_task_finish(self.tq)
+        C.ngx_http_lua_ffi_task_finish(self.tq)
         self.tq = nil
         runtimes[self.key] = nil
         self.key = nil
@@ -61,7 +61,7 @@ local function ffi_load(lib, is_global, is_pin)
     return handle
 end
 
-ngx.load_nonblocking_ffi = function(lib, cfg, opts)
+ngx.load_ffi = function(lib, cfg, opts)
     local max_queue = 65536
     local is_global = false
     if opts ~= nil then
@@ -82,7 +82,7 @@ ngx.load_nonblocking_ffi = function(lib, cfg, opts)
     end
 
     local is_pin = (not opts) or (not opts.unpin)
-    local tq = C.ngx_nonblocking_ffi_create_task_queue(max_queue)
+    local tq = C.ngx_http_lua_ffi_create_task_queue(max_queue)
     local nffi = setmetatable({
         finished = false,
         key = key,
@@ -96,7 +96,7 @@ ngx.load_nonblocking_ffi = function(lib, cfg, opts)
         buf = C.malloc(#cfg + 1)
         ffi.copy(buf, cfg)
     end
-    local rc = nffi.handle.lib_nonblocking_ffi_init(buf, tq)
+    local rc = nffi.handle.libffi_init(buf, tq)
     if buf then
         C.free(buf)
     end

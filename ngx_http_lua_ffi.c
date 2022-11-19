@@ -30,7 +30,7 @@ typedef struct {
     char                    *rsp;
     int                      rsp_len;
     int                      is_abort:1;
-} nonblocking_ffi_task_ctx_t;
+} ffi_task_ctx_t;
 
 
 typedef struct {
@@ -50,14 +50,14 @@ typedef struct {
     ngx_thread_cond_t         cond;
     ngx_log_t                *log;
     ngx_int_t                 max_queue;
-} nonblocking_ffi_task_queue_t;
+} ffi_task_queue_t;
 
 
 char*
-ngx_http_lua_nonblocking_ffi_get_req(void *tsk, int *len)
+ngx_http_lua_ffi_get_req(void *tsk, int *len)
 {
     ngx_thread_task_t *task = tsk;
-    nonblocking_ffi_task_ctx_t *ctx = task->ctx;
+    ffi_task_ctx_t *ctx = task->ctx;
     if (len != NULL) {
         *len = ctx->req_len;
     }
@@ -66,10 +66,10 @@ ngx_http_lua_nonblocking_ffi_get_req(void *tsk, int *len)
 
 
 void
-ngx_http_lua_nonblocking_ffi_respond(void *tsk, int rc, char* rsp, int rsp_len)
+ngx_http_lua_ffi_respond(void *tsk, int rc, char* rsp, int rsp_len)
 {
     ngx_thread_task_t *task = tsk;
-    nonblocking_ffi_task_ctx_t *ctx = task->ctx;
+    ffi_task_ctx_t *ctx = task->ctx;
     ctx->rc = rc;
     ctx->rsp = rsp;
     ctx->rsp_len = rsp_len;
@@ -84,7 +84,7 @@ ngx_http_lua_nonblocking_ffi_respond(void *tsk, int rc, char* rsp, int rsp_len)
  * to avoid memory fragmentation.
  */
 static ngx_thread_task_t *
-ngx_http_lua_nonblocking_ffi_task_alloc(size_t size)
+ngx_http_lua_ffi_task_alloc(size_t size)
 {
     ngx_thread_task_t  *task;
 
@@ -100,7 +100,7 @@ ngx_http_lua_nonblocking_ffi_task_alloc(size_t size)
 
 
 static void
-ngx_http_lua_nonblocking_ffi_task_free(nonblocking_ffi_task_ctx_t *ctx)
+ngx_http_lua_ffi_task_free(ffi_task_ctx_t *ctx)
 {
     if (ctx->req) {
         free(ctx->req);
@@ -114,7 +114,7 @@ ngx_http_lua_nonblocking_ffi_task_free(nonblocking_ffi_task_ctx_t *ctx)
 
 
 static ngx_int_t
-ngx_http_lua_nonblocking_ffi_resume(ngx_http_request_t *r)
+ngx_http_lua_ffi_resume(ngx_http_request_t *r)
 {
     lua_State                   *vm;
     ngx_connection_t            *c;
@@ -160,21 +160,21 @@ ngx_http_lua_nonblocking_ffi_resume(ngx_http_request_t *r)
 
 /* executed in nginx event loop */
 static void
-ngx_http_lua_nonblocking_ffi_event_handler(ngx_event_t *ev)
+ngx_http_lua_ffi_event_handler(ngx_event_t *ev)
 {
-    nonblocking_ffi_task_ctx_t         *nonblocking_ffi_ctx;
-    lua_State                          *L;
-    ngx_http_request_t                 *r;
-    ngx_connection_t                   *c;
-    ngx_http_lua_ctx_t                 *ctx;
+    ffi_task_ctx_t         *ffi_ctx;
+    lua_State              *L;
+    ngx_http_request_t     *r;
+    ngx_connection_t       *c;
+    ngx_http_lua_ctx_t     *ctx;
 
-    nonblocking_ffi_ctx = ev->data;
+    ffi_ctx = ev->data;
 
-    if (nonblocking_ffi_ctx->is_abort) {
+    if (ffi_ctx->is_abort) {
         goto failed;
     }
 
-    L = nonblocking_ffi_ctx->wait_co_ctx->co;
+    L = ffi_ctx->wait_co_ctx->co;
 
     r = ngx_http_lua_get_req(L);
     if (r == NULL) {
@@ -188,38 +188,38 @@ ngx_http_lua_nonblocking_ffi_event_handler(ngx_event_t *ev)
         goto failed;
     }
 
-    lua_pushboolean(L, nonblocking_ffi_ctx->rc ? 0 : 1);
+    lua_pushboolean(L, ffi_ctx->rc ? 0 : 1);
 
-    if (nonblocking_ffi_ctx->rc) {
-        lua_pushinteger(L, nonblocking_ffi_ctx->rc);
+    if (ffi_ctx->rc) {
+        lua_pushinteger(L, ffi_ctx->rc);
     }
 
-    if (nonblocking_ffi_ctx->rsp) {
-        if (nonblocking_ffi_ctx->rsp_len) {
-            lua_pushlstring(L, nonblocking_ffi_ctx->rsp, nonblocking_ffi_ctx->rsp_len);
+    if (ffi_ctx->rsp) {
+        if (ffi_ctx->rsp_len) {
+            lua_pushlstring(L, ffi_ctx->rsp, ffi_ctx->rsp_len);
         } else {
-            lua_pushstring(L, nonblocking_ffi_ctx->rsp);
+            lua_pushstring(L, ffi_ctx->rsp);
         }
     } else {
         lua_pushnil(L);
     }
 
-    if (!nonblocking_ffi_ctx->rc) {
+    if (!ffi_ctx->rc) {
         lua_pushnil(L);
     }
 
-    ctx->cur_co_ctx = nonblocking_ffi_ctx->wait_co_ctx;
+    ctx->cur_co_ctx = ffi_ctx->wait_co_ctx;
     ctx->cur_co_ctx->cleanup = NULL;
 
-    ngx_http_lua_nonblocking_ffi_task_free(nonblocking_ffi_ctx);
+    ngx_http_lua_ffi_task_free(ffi_ctx);
 
     /* resume the caller coroutine */
 
     if (ctx->entered_content_phase) {
-        (void) ngx_http_lua_nonblocking_ffi_resume(r);
+        (void) ngx_http_lua_ffi_resume(r);
 
     } else {
-        ctx->resume_handler = ngx_http_lua_nonblocking_ffi_resume;
+        ctx->resume_handler = ngx_http_lua_ffi_resume;
         ngx_http_core_run_phases(r);
     }
 
@@ -229,24 +229,24 @@ ngx_http_lua_nonblocking_ffi_event_handler(ngx_event_t *ev)
 
 failed:
 
-    ngx_http_lua_nonblocking_ffi_task_free(nonblocking_ffi_ctx);
+    ngx_http_lua_ffi_task_free(ffi_ctx);
     return;
 }
 
 
 static void
-ngx_http_lua_nonblocking_ffi_cleanup(void *data)
+ngx_http_lua_ffi_cleanup(void *data)
 {
     ngx_http_lua_co_ctx_t *ctx = data;
-    nonblocking_ffi_task_ctx_t *nonblocking_ffi_ctx = ctx->data;
-    nonblocking_ffi_ctx->is_abort = 1;
+    ffi_task_ctx_t *ffi_ctx = ctx->data;
+    ffi_ctx->is_abort = 1;
 }
 
 
 void*
-ngx_nonblocking_ffi_create_task_queue(int max_queue)
+ngx_http_lua_ffi_create_task_queue(int max_queue)
 {
-    nonblocking_ffi_task_queue_t* tp = ngx_calloc(sizeof(nonblocking_ffi_task_queue_t), ngx_cycle->log);
+    ffi_task_queue_t* tp = ngx_calloc(sizeof(ffi_task_queue_t), ngx_cycle->log);
 
     ngx_task_queue_init(&tp->queue);
 
@@ -268,8 +268,8 @@ ngx_nonblocking_ffi_create_task_queue(int max_queue)
 }
 
 
-void
-ngx_nonblocking_ffi_free_task_queue(nonblocking_ffi_task_queue_t* tp)
+static void
+ngx_http_lua_ffi_free_task_queue(ffi_task_queue_t* tp)
 {
     /*
      * After special finished task, no new task post (ensured by lua land),
@@ -282,40 +282,39 @@ ngx_nonblocking_ffi_free_task_queue(nonblocking_ffi_task_queue_t* tp)
 
 
 static ngx_thread_task_t*
-ngx_http_lua_nonblocking_ffi_create_task(ngx_http_request_t *r)
+ngx_http_lua_ffi_create_task(ngx_http_request_t *r)
 {
-    ngx_http_lua_ctx_t                 *ctx;
-    ngx_thread_task_t                  *task;
-    nonblocking_ffi_task_ctx_t         *nonblocking_ffi_ctx;
+    ngx_http_lua_ctx_t     *ctx;
+    ngx_thread_task_t      *task;
+    ffi_task_ctx_t         *ffi_ctx;
 
     ctx = ngx_http_get_module_ctx(r, ngx_http_lua_module);
     if (ctx == NULL) {
         return NULL;
     }
 
-    task = ngx_http_lua_nonblocking_ffi_task_alloc(
-                sizeof(nonblocking_ffi_task_ctx_t));
+    task = ngx_http_lua_ffi_task_alloc(sizeof(ffi_task_ctx_t));
 
     if (task == NULL) {
         return NULL;
     }
 
-    nonblocking_ffi_ctx = task->ctx;
+    ffi_ctx = task->ctx;
 
-    nonblocking_ffi_ctx->wait_co_ctx = ctx->cur_co_ctx;
+    ffi_ctx->wait_co_ctx = ctx->cur_co_ctx;
 
-    ctx->cur_co_ctx->cleanup = ngx_http_lua_nonblocking_ffi_cleanup;
-    ctx->cur_co_ctx->data = nonblocking_ffi_ctx;
+    ctx->cur_co_ctx->cleanup = ngx_http_lua_ffi_cleanup;
+    ctx->cur_co_ctx->data = ffi_ctx;
 
-    task->event.handler = ngx_http_lua_nonblocking_ffi_event_handler;
-    task->event.data = nonblocking_ffi_ctx;
+    task->event.handler = ngx_http_lua_ffi_event_handler;
+    task->event.data = ffi_ctx;
 
     return task;
 }
 
 
 static ngx_int_t
-ngx_task_post(nonblocking_ffi_task_queue_t *tp, ngx_thread_task_t *task)
+ngx_task_post(ffi_task_queue_t *tp, ngx_thread_task_t *task)
 {
     if (task->event.active) {
         ngx_log_error(NGX_LOG_ALERT, tp->log, 0,
@@ -358,16 +357,16 @@ ngx_task_post(nonblocking_ffi_task_queue_t *tp, ngx_thread_task_t *task)
 
 
 int
-ngx_http_lua_nonblocking_ffi_task_post(void *p0, void* p, char* req, int req_len)
+ngx_http_lua_ffi_task_post(void *p0, void* p, char* req, int req_len)
 {
     ngx_http_request_t *r = p0;
-    nonblocking_ffi_task_queue_t *tp = p;
-    ngx_thread_task_t *task = ngx_http_lua_nonblocking_ffi_create_task(r);
-    nonblocking_ffi_task_ctx_t *ctx = task->ctx;
+    ffi_task_queue_t *tp = p;
+    ngx_thread_task_t *task = ngx_http_lua_ffi_create_task(r);
+    ffi_task_ctx_t *ctx = task->ctx;
     ctx->req = req;
     ctx->req_len = req_len;
     if (ngx_task_post(tp, task) != NGX_OK) {
-        ngx_http_lua_nonblocking_ffi_task_free(ctx);
+        ngx_http_lua_ffi_task_free(ctx);
         return NGX_ERROR;
     }
     return NGX_OK;
@@ -375,9 +374,9 @@ ngx_http_lua_nonblocking_ffi_task_post(void *p0, void* p, char* req, int req_len
 
 
 int
-ngx_http_lua_nonblocking_ffi_task_finish(void* p)
+ngx_http_lua_ffi_task_finish(void* p)
 {
-    nonblocking_ffi_task_queue_t *tp = p;
+    ffi_task_queue_t *tp = p;
 
     ngx_thread_task_t *task = ngx_calloc(sizeof(ngx_thread_task_t), ngx_cycle->log);
 
@@ -392,9 +391,9 @@ ngx_http_lua_nonblocking_ffi_task_finish(void* p)
 
 
 void*
-ngx_http_lua_nonblocking_ffi_task_poll(void *p)
+ngx_http_lua_ffi_task_poll(void *p)
 {
-    nonblocking_ffi_task_queue_t *tp = p;
+    ffi_task_queue_t *tp = p;
     ngx_thread_task_t *task = NULL;
     if (ngx_thread_mutex_lock(&tp->mtx, tp->log) != NGX_OK) {
         return NULL;
@@ -428,7 +427,7 @@ ngx_http_lua_nonblocking_ffi_task_poll(void *p)
     }
 
     ngx_free(task);
-    ngx_nonblocking_ffi_free_task_queue(tp);
+    ngx_http_lua_ffi_free_task_queue(tp);
     return NULL;
 }
 

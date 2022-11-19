@@ -5,7 +5,7 @@
 static JavaVM *vm;
 static JNIEnv *env;
 
-int lib_nonblocking_ffi_init(char* cfg, void *tq)
+int libffi_init(char* cfg, void *tq)
 {
     if (vm == NULL) {
         JavaVMInitArgs  vm_args;

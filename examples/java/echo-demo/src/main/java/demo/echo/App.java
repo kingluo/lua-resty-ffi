@@ -8,9 +8,9 @@ import jnr.ffi.annotations.Out;
 
 class PollThread implements Runnable {
     public interface FFI {
-        Pointer ngx_http_lua_nonblocking_ffi_task_poll(@In Pointer tq);
-        Pointer ngx_http_lua_nonblocking_ffi_get_req(@In Pointer task, @Out IntByReference len);
-        void ngx_http_lua_nonblocking_ffi_respond(@In Pointer tsk, @In int rc, @In Pointer rsp, @In int rsp_len);
+        Pointer ngx_http_lua_ffi_task_poll(@In Pointer tq);
+        Pointer ngx_http_lua_ffi_get_req(@In Pointer task, @Out IntByReference len);
+        void ngx_http_lua_ffi_respond(@In Pointer tsk, @In int rc, @In Pointer rsp, @In int rsp_len);
     }
 
     public interface Libc {
@@ -31,16 +31,16 @@ class PollThread implements Runnable {
         IntByReference ap = new IntByReference();
 
         while(true) {
-            var task = ffi.ngx_http_lua_nonblocking_ffi_task_poll(tq);
+            var task = ffi.ngx_http_lua_ffi_task_poll(tq);
             if (task == null) {
                 break;
             }
-            var req = ffi.ngx_http_lua_nonblocking_ffi_get_req(task, ap);
+            var req = ffi.ngx_http_lua_ffi_get_req(task, ap);
             var len = ap.intValue();
 
             var rsp = libc.malloc(len);
             libc.memcpy(rsp, req, len);
-            ffi.ngx_http_lua_nonblocking_ffi_respond(task, 0, rsp, len);
+            ffi.ngx_http_lua_ffi_respond(task, 0, rsp, len);
         }
 
         System.out.println("exit java echo runtime");

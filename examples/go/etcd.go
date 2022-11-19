@@ -3,9 +3,9 @@ package main
 /*
 #cgo LDFLAGS: -shared
 #include <string.h>
-void* ngx_http_lua_nonblocking_ffi_task_poll(void *p);
-char* ngx_http_lua_nonblocking_ffi_get_req(void *tsk, int *len);
-void ngx_http_lua_nonblocking_ffi_respond(void *tsk, int rc, char* rsp, int rsp_len);
+void* ngx_http_lua_ffi_task_poll(void *p);
+char* ngx_http_lua_ffi_get_req(void *tsk, int *len);
+void ngx_http_lua_ffi_respond(void *tsk, int rc, char* rsp, int rsp_len);
 */
 import "C"
 import (
@@ -81,7 +81,7 @@ func (state *State) watch(prefix string) {
 			if err != nil {
 				log.Fatalln("put failed, err:", err)
 			}
-			C.ngx_http_lua_nonblocking_ffi_respond(w.task, 0, (*C.char)(C.CBytes(events)), C.int(len(events)))
+			C.ngx_http_lua_ffi_respond(w.task, 0, (*C.char)(C.CBytes(events)), C.int(len(events)))
 		}
 	}
 }
@@ -95,11 +95,11 @@ func (state *State) put(p *Put) {
 		log.Println("put failed, err:", err)
 		rc = -1
 	}
-	C.ngx_http_lua_nonblocking_ffi_respond(p.task, rc, nil, 0)
+	C.ngx_http_lua_ffi_respond(p.task, rc, nil, 0)
 }
 
-//export lib_nonblocking_ffi_init
-func lib_nonblocking_ffi_init(cfg *C.char, tq unsafe.Pointer) C.int {
+//export libffi_init
+func libffi_init(cfg *C.char, tq unsafe.Pointer) C.int {
 	var etcdNodes []string
 	data := C.GoString(cfg)
 	err := json.Unmarshal([]byte(data), &etcdNodes)
@@ -121,10 +121,10 @@ func lib_nonblocking_ffi_init(cfg *C.char, tq unsafe.Pointer) C.int {
 		isWatchStart := false
 		state := &State{cli: cli}
 		for {
-			task := C.ngx_http_lua_nonblocking_ffi_task_poll(tq)
+			task := C.ngx_http_lua_ffi_task_poll(tq)
 
 			var rlen C.int
-			r := C.ngx_http_lua_nonblocking_ffi_get_req(task, &rlen)
+			r := C.ngx_http_lua_ffi_get_req(task, &rlen)
 			data := C.GoBytes(unsafe.Pointer(r), rlen)
 			var req Request
 			err := json.Unmarshal(data, &req)

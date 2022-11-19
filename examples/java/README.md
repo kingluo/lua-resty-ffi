@@ -1,11 +1,11 @@
-# JAVA nonblocking-ffi lib
+# JAVA ffi lib
 
 ## Build
 
 ```bash
-cd examples/lib_nonblocking_ffi_java
+cd examples/lib_ffi_java
 apt install openjdk-17-jdk
-gcc -shared -fPIC -o lib_nonblocking_ffi_java.so main.c -I../../ -I/usr/lib/jvm/java-17-openjdk-amd64/include/ -I/usr/lib/jvm/java-17-openjdk-amd64/include/linux/ -L/usr/lib/jvm/java-17-openjdk-amd64/lib/ -L/usr/lib/jvm/java-17-openjdk-amd64/lib/server/ -ljli -ljvm -lpthread
+gcc -shared -fPIC -o lib_ffi_java.so main.c -I../../ -I/usr/lib/jvm/java-17-openjdk-amd64/include/ -I/usr/lib/jvm/java-17-openjdk-amd64/include/linux/ -L/usr/lib/jvm/java-17-openjdk-amd64/lib/ -L/usr/lib/jvm/java-17-openjdk-amd64/lib/server/ -ljli -ljvm -lpthread
 (cd http2-demo; mvn -DskipTests=true -Dmaven.test.skip=true package)
 (cd echo-demo; mvn -DskipTests=true -Dmaven.test.skip=true package)
 ```

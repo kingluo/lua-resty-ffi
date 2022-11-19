@@ -1,5 +1,5 @@
 local cjson = require("cjson")
-local grpc = ngx.load_nonblocking_ffi("grpc_client")
+local grpc = ngx.load_ffi("grpc_client")
 
 local NEW_CONNECTION = 0
 local CLOSE_CONNECTION = 1

@@ -1,4 +1,4 @@
-module github.com/kingluo/lua-resty-nonblocking-ffi
+module github.com/kingluo/lua-resty-ffi
 
 go 1.19
 

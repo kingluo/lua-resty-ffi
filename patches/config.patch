@@ -4,7 +4,7 @@
              $ngx_addon_dir/src/ngx_http_lua_input_filters.c \
              $ngx_addon_dir/src/ngx_http_lua_pipe.c \
              $ngx_addon_dir/src/ngx_http_lua_worker_thread.c \
-+            $ngx_addon_dir/src/ngx_http_lua_nonblocking_ffi.c \
++            $ngx_addon_dir/src/ngx_http_lua_ffi.c \
              "
  
  HTTP_LUA_DEPS=" \

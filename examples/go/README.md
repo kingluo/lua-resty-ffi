@@ -1,11 +1,11 @@
-# Golang nonblocking-ffi lib
+# Golang ffi lib
 
 ## Build
 
 ```bash
-cd examples/lib_nonblocking_ffi_go_etcd
+cd examples/lib_ffi_go_etcd
 go mod download
-go build -buildmode=c-shared -o lib_nonblocking_ffi_go_etcd.so main.go
+go build -buildmode=c-shared -o lib_ffi_go_etcd.so main.go
 go build -buildmode=c-shared -o libecho.so echo.go
 ```
 

@@ -69,9 +69,9 @@ unsafe impl Send for TaskHandle {}
 unsafe impl Sync for TaskHandle {}
 
 extern "C" {
-    fn ngx_http_lua_nonblocking_ffi_task_poll(p: *const c_void) -> *const c_void;
-    fn ngx_http_lua_nonblocking_ffi_get_req(tsk: *const c_void, len: *mut c_int) -> *mut c_char;
-    fn ngx_http_lua_nonblocking_ffi_respond(
+    fn ngx_http_lua_ffi_task_poll(p: *const c_void) -> *const c_void;
+    fn ngx_http_lua_ffi_get_req(tsk: *const c_void, len: *mut c_int) -> *mut c_char;
+    fn ngx_http_lua_ffi_respond(
         tsk: *const c_void,
         rc: c_int,
         rsp: *const c_char,
@@ -140,7 +140,7 @@ impl Decoder for MyCodec {
 }
 
 #[no_mangle]
-pub extern "C" fn lib_nonblocking_ffi_init(_cfg: *mut c_char, tq: *const c_void) -> c_int {
+pub extern "C" fn libffi_init(_cfg: *mut c_char, tq: *const c_void) -> c_int {
     let tq = TaskQueueHandle(tq);
 
     let rt = tokio::runtime::Builder::new_multi_thread()
@@ -157,14 +157,14 @@ pub extern "C" fn lib_nonblocking_ffi_init(_cfg: *mut c_char, tq: *const c_void)
             let tq = tq.clone();
 
             loop {
-                let task = unsafe { TaskHandle(ngx_http_lua_nonblocking_ffi_task_poll(tq.0)) };
+                let task = unsafe { TaskHandle(ngx_http_lua_ffi_task_poll(tq.0)) };
                 if task.0.is_null() {
                     break;
                 }
 
                 let req_len = Box::<c_int>::new(0);
                 let ptr = Box::into_raw(req_len);
-                let req = unsafe { ngx_http_lua_nonblocking_ffi_get_req(task.0, ptr) };
+                let req = unsafe { ngx_http_lua_ffi_get_req(task.0, ptr) };
 
                 let sli = unsafe { std::slice::from_raw_parts(req as *const u8, *ptr as usize) };
                 let mut cmd: GrpcCommand = serde_json::from_slice(sli).unwrap();
@@ -219,7 +219,7 @@ pub extern "C" fn lib_nonblocking_ffi_init(_cfg: *mut c_char, tq: *const c_void)
                                 libc::memcpy(res, id.as_ptr() as *const c_void, id.len());
                                 let len = id.len();
                                 clients.lock().unwrap().insert(id, cli);
-                                ngx_http_lua_nonblocking_ffi_respond(
+                                ngx_http_lua_ffi_respond(
                                     task.0,
                                     0,
                                     res as *mut c_char,
@@ -231,7 +231,7 @@ pub extern "C" fn lib_nonblocking_ffi_init(_cfg: *mut c_char, tq: *const c_void)
                     CLOSE_CONNECTION => {
                         clients.lock().unwrap().remove(&cmd.key);
                         unsafe {
-                            ngx_http_lua_nonblocking_ffi_respond(
+                            ngx_http_lua_ffi_respond(
                                 task.0,
                                 0,
                                 std::ptr::null_mut(),
@@ -254,14 +254,14 @@ pub extern "C" fn lib_nonblocking_ffi_init(_cfg: *mut c_char, tq: *const c_void)
                             let res = cli.unary(tonic::Request::new(buf), path, MyCodec).await;
                             unsafe {
                                 if let Ok(mut res) = res {
-                                    ngx_http_lua_nonblocking_ffi_respond(
+                                    ngx_http_lua_ffi_respond(
                                         task.0,
                                         0,
                                         res.get_mut().0,
                                         res.get_ref().1 as i32,
                                     );
                                 } else {
-                                    ngx_http_lua_nonblocking_ffi_respond(
+                                    ngx_http_lua_ffi_respond(
                                         task.0,
                                         1,
                                         std::ptr::null_mut(),
@@ -291,7 +291,7 @@ pub extern "C" fn lib_nonblocking_ffi_init(_cfg: *mut c_char, tq: *const c_void)
                                 libc::memcpy(res, id.as_ptr() as *const c_void, id.len());
                                 let len = id.len();
                                 streams.lock().unwrap().insert(id, (Some(send_tx), recv_tx));
-                                ngx_http_lua_nonblocking_ffi_respond(
+                                ngx_http_lua_ffi_respond(
                                     task.0,
                                     0,
                                     res as *mut c_char,
@@ -307,7 +307,7 @@ pub extern "C" fn lib_nonblocking_ffi_init(_cfg: *mut c_char, tq: *const c_void)
                             while let Some(task) = recv_rx.recv().await {
                                 if let Some(res) = stream.message().await.unwrap() {
                                     unsafe {
-                                        ngx_http_lua_nonblocking_ffi_respond(
+                                        ngx_http_lua_ffi_respond(
                                             task.0,
                                             0,
                                             res.0,
@@ -316,7 +316,7 @@ pub extern "C" fn lib_nonblocking_ffi_init(_cfg: *mut c_char, tq: *const c_void)
                                     }
                                 } else {
                                     unsafe {
-                                        ngx_http_lua_nonblocking_ffi_respond(
+                                        ngx_http_lua_ffi_respond(
                                             task.0,
                                             0,
                                             std::ptr::null_mut(),
@@ -341,7 +341,7 @@ pub extern "C" fn lib_nonblocking_ffi_init(_cfg: *mut c_char, tq: *const c_void)
                         };
                         let buf = EncodedBytes(cbuf as *mut c_char, vec.len(), true);
                         unsafe {
-                            ngx_http_lua_nonblocking_ffi_respond(
+                            ngx_http_lua_ffi_respond(
                                 task.0,
                                 if send_tx.send(buf).is_ok() { 0 } else { 1 },
                                 std::ptr::null_mut(),
@@ -357,7 +357,7 @@ pub extern "C" fn lib_nonblocking_ffi_init(_cfg: *mut c_char, tq: *const c_void)
                     CLOSE_STREAM => {
                         streams.lock().unwrap().remove(&cmd.key);
                         unsafe {
-                            ngx_http_lua_nonblocking_ffi_respond(
+                            ngx_http_lua_ffi_respond(
                                 task.0,
                                 0,
                                 std::ptr::null_mut(),
@@ -369,7 +369,7 @@ pub extern "C" fn lib_nonblocking_ffi_init(_cfg: *mut c_char, tq: *const c_void)
                         let (_, recv_tx) = streams.lock().unwrap().remove(&cmd.key).unwrap();
                         streams.lock().unwrap().insert(cmd.key, (None, recv_tx));
                         unsafe {
-                            ngx_http_lua_nonblocking_ffi_respond(
+                            ngx_http_lua_ffi_respond(
                                 task.0,
                                 0,
                                 std::ptr::null_mut(),

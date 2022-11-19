@@ -4,7 +4,7 @@
  require "resty.core.exit"
  require "resty.core.base64"
  require "resty.core.request"
-+require "resty.core.nonblocking_ffi"
++require "resty.core.ffi"
  
  
  if subsystem == 'http' then

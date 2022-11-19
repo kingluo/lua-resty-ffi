@@ -32,9 +32,9 @@ class Response {
 
 class PollThread implements Runnable {
     public interface FFI {
-        Pointer ngx_http_lua_nonblocking_ffi_task_poll(@In Pointer tq);
-        Pointer ngx_http_lua_nonblocking_ffi_get_req(@In Pointer task, @Out IntByReference len);
-        void ngx_http_lua_nonblocking_ffi_respond(@In Pointer tsk, @In int rc, @In Pointer rsp, @In int rsp_len);
+        Pointer ngx_http_lua_ffi_task_poll(@In Pointer tq);
+        Pointer ngx_http_lua_ffi_get_req(@In Pointer task, @Out IntByReference len);
+        void ngx_http_lua_ffi_respond(@In Pointer tsk, @In int rc, @In Pointer rsp, @In int rsp_len);
     }
 
     public interface Libc {
@@ -57,11 +57,11 @@ class PollThread implements Runnable {
         var gson = new Gson();
 
         while(true) {
-            var task = ffi.ngx_http_lua_nonblocking_ffi_task_poll(tq);
+            var task = ffi.ngx_http_lua_ffi_task_poll(tq);
             if (task == null) {
                 break;
             }
-            var req = ffi.ngx_http_lua_nonblocking_ffi_get_req(task, ap);
+            var req = ffi.ngx_http_lua_ffi_get_req(task, ap);
             var len = ap.intValue();
 
             final byte[] bytes = new byte[len];
@@ -91,7 +91,7 @@ class PollThread implements Runnable {
                     int rspLen = arr.length;
                     var rspStr = libc.malloc(rspLen);
                     rspStr.put(0, arr, 0, rspLen);
-                    ffi.ngx_http_lua_nonblocking_ffi_respond(task, 0, rspStr, rspLen);
+                    ffi.ngx_http_lua_ffi_respond(task, 0, rspStr, rspLen);
                 });
         }
     }
