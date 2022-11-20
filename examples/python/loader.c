@@ -13,7 +13,9 @@ typedef struct {
 
 static int init(state_t *state)
 {
+#if PY_VERSION_HEX >= 0x03080000
     int reload_module = 0;
+#endif
     int rc = 1;
     char* module = state->module;
     const char* func = state->func;
@@ -27,11 +29,13 @@ static int init(state_t *state)
         module = last + 1;
     }
 
+#if PY_VERSION_HEX >= 0x03080000
     int lastpos = strlen(module) - 1;
     if (module[lastpos] == '?') {
         module[lastpos] = 0;
         reload_module = 1;
     }
+#endif
 
     PyObject *pName, *pModule, *pFunc;
     PyObject *pArgs, *pValue;

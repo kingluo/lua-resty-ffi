@@ -34,7 +34,7 @@ prepare_centos() {
 
 prepare_debian() {
     DEBIAN_FRONTEND=noninteractive apt-get update
-    DEBIAN_FRONTEND=noninteractive apt-get install -y sudo git perl build-essential
+    DEBIAN_FRONTEND=noninteractive apt-get install -y sudo git perl build-essential curl
     DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends wget gnupg ca-certificates
 
     wget -O - https://openresty.org/package/pubkey.gpg | apt-key add -
