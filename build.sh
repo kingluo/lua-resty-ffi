@@ -13,16 +13,32 @@ export_openresty_variables() {
     export ld_opt="-L${zlib_prefix}/lib -L${pcre_prefix}/lib -L${openssl_prefix}/lib -Wl,-rpath,${zlib_prefix}/lib:${pcre_prefix}/lib:${openssl_prefix}/lib"
 }
 
-prepare_centos7() {
-    yum -y install centos-release-scl
-    yum -y install devtoolset-9 patch wget git make sudo
-    source scl_source enable devtoolset-9
+prepare_centos() {
+    if [[ $(rpm --eval '%{centos_ver}') == "7" ]]; then
+        yum -y install centos-release-scl
+        yum -y install devtoolset-9 patch wget git make sudo
+        set +eu
+        source scl_source enable devtoolset-9
+        set -eu
+    elif [[ $(rpm --eval '%{centos_ver}') == "8" ]]; then
+        dnf install -y gcc-toolset-9-toolchain patch wget git make sudo
+        dnf install -y yum-utils
+        set +eu
+        source /opt/rh/gcc-toolset-9/enable
+        set -eu
+    fi
 
     yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
     yum -y install openresty-openssl111-devel openresty-pcre-devel openresty-zlib-devel
 }
 
 prepare_debian() {
+    DEBIAN_FRONTEND=noninteractive apt-get update
+    DEBIAN_FRONTEND=noninteractive apt-get install -y sudo git perl build-essential
+    DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends wget gnupg ca-certificates
+
+    wget -O - https://openresty.org/package/pubkey.gpg | apt-key add -
+
     if [[ $ID == "ubuntu" ]]; then
         echo "deb http://openresty.org/package/ubuntu ${VERSION_CODENAME} main" > /etc/apt/sources.list.d/openresty.list
     fi
@@ -31,11 +47,13 @@ prepare_debian() {
         echo "deb http://openresty.org/package/debian ${VERSION_CODENAME} openresty" > /etc/apt/sources.list.d/openresty.list
     fi
 
+    apt update
+
     apt install -y build-essential openresty-openssl111-dev openresty-pcre-dev openresty-zlib-dev
 }
 
 if [[ $ID == "centos" ]]; then
-    prepare_centos7
+    prepare_centos
 else
     prepare_debian
 fi
