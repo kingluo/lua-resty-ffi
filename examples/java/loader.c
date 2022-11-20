@@ -15,7 +15,8 @@ int libffi_init(char* cfg, void *tq)
         jstring         jstr;
         jobjectArray    main_args;
 
-        JavaVMOption options[1];
+        #define MAX_OPTS 50
+        JavaVMOption options[MAX_OPTS];
         vm_args.version  = JNI_VERSION_1_8;
         vm_args.nOptions = 0;
         vm_args.options = options;
@@ -27,7 +28,24 @@ int libffi_init(char* cfg, void *tq)
             options[vm_args.nOptions++].optionString = path;
         }
 
+        char* java_opts = getenv("JAVA_OPTS");
+        char* opts = NULL;
+        if (java_opts) {
+            opts = strdup(java_opts);
+            char* opt;
+            while ((opt = strsep(&opts, " "))) {
+                printf("opt: %s\n", opt);
+                options[vm_args.nOptions++].optionString = opt;
+                if (vm_args.nOptions == MAX_OPTS) {
+                    break;
+                }
+            }
+        }
+
         res = JNI_CreateJavaVM(&vm, (void **)&env, &vm_args);
+        if (opts) {
+            free(opts);
+        }
         if (res != JNI_OK) {
             printf("Failed to create Java VM\n");
             return 1;
