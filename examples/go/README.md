@@ -22,12 +22,19 @@ export PATH=$PATH:/usr/local/go/bin
 
 ```bash
 # in one terminal
+# start etcd container for test
+docker compose up -d
+
+# compile example libraries
 make
+
+# run nginx
 make run
 # or specify nginx executable file path
 # make run NGINX=/path/to/nginx
 
 # in another terminal
+# curl the tests
 make test
 ```
 
