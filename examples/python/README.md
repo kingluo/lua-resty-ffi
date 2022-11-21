@@ -56,6 +56,7 @@ def init(cfg, tq):
 Specify the entry module and function in lua and use it:
 
 ```lua
+-- note that the python loader library symbols must be opened in global
 local demo = ngx.load_ffi("ffi_python3", "ffi.echo,init",
     {is_global = true, unpin = true})
 local ok, res = demo:echo("hello")
