@@ -11,17 +11,32 @@ lua-resty-ffi provides an efficient and generic API to do hybrid programming in 
 
 ## Quickstart
 
+Take golang as example:
+
 ```bash
 # in one terminal
+# compile and install openresty with lua-resty-ffi
 ./build.sh
-cd examples
+
+cd examples/go
+
+# install golang if not yet
+wget https://go.dev/dl/go1.19.3.linux-amd64.tar.gz
+rm -rf /usr/local/go && tar -C /usr/local -xzf go1.19.3.linux-amd64.tar.gz
+export PATH=$PATH:/usr/local/go/bin
+
+# compile example libraries
 make
+
+# run nginx
 make run
 
 # in another terminal
-cd examples
-make test
+curl http://localhost:20000/echo
+ok
 ```
+
+Please check directory of each programming language for detail.
 
 ## Background
 
