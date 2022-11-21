@@ -71,12 +71,7 @@ unsafe impl Sync for TaskHandle {}
 extern "C" {
     fn ngx_http_lua_ffi_task_poll(p: *const c_void) -> *const c_void;
     fn ngx_http_lua_ffi_get_req(tsk: *const c_void, len: *mut c_int) -> *mut c_char;
-    fn ngx_http_lua_ffi_respond(
-        tsk: *const c_void,
-        rc: c_int,
-        rsp: *const c_char,
-        rsp_len: c_int,
-    );
+    fn ngx_http_lua_ffi_respond(tsk: *const c_void, rc: c_int, rsp: *const c_char, rsp_len: c_int);
 }
 
 struct EncodedBytes(*mut c_char, usize, bool);
@@ -219,24 +214,14 @@ pub extern "C" fn libffi_init(_cfg: *mut c_char, tq: *const c_void) -> c_int {
                                 libc::memcpy(res, id.as_ptr() as *const c_void, id.len());
                                 let len = id.len();
                                 clients.lock().unwrap().insert(id, cli);
-                                ngx_http_lua_ffi_respond(
-                                    task.0,
-                                    0,
-                                    res as *mut c_char,
-                                    len as i32,
-                                );
+                                ngx_http_lua_ffi_respond(task.0, 0, res as *mut c_char, len as i32);
                             }
                         });
                     }
                     CLOSE_CONNECTION => {
                         clients.lock().unwrap().remove(&cmd.key);
                         unsafe {
-                            ngx_http_lua_ffi_respond(
-                                task.0,
-                                0,
-                                std::ptr::null_mut(),
-                                0,
-                            );
+                            ngx_http_lua_ffi_respond(task.0, 0, std::ptr::null_mut(), 0);
                         }
                     }
                     UNARY => {
@@ -261,12 +246,7 @@ pub extern "C" fn libffi_init(_cfg: *mut c_char, tq: *const c_void) -> c_int {
                                         res.get_ref().1 as i32,
                                     );
                                 } else {
-                                    ngx_http_lua_ffi_respond(
-                                        task.0,
-                                        1,
-                                        std::ptr::null_mut(),
-                                        0,
-                                    );
+                                    ngx_http_lua_ffi_respond(task.0, 1, std::ptr::null_mut(), 0);
                                 }
                             }
                         });
@@ -291,12 +271,7 @@ pub extern "C" fn libffi_init(_cfg: *mut c_char, tq: *const c_void) -> c_int {
                                 libc::memcpy(res, id.as_ptr() as *const c_void, id.len());
                                 let len = id.len();
                                 streams.lock().unwrap().insert(id, (Some(send_tx), recv_tx));
-                                ngx_http_lua_ffi_respond(
-                                    task.0,
-                                    0,
-                                    res as *mut c_char,
-                                    len as i32,
-                                );
+                                ngx_http_lua_ffi_respond(task.0, 0, res as *mut c_char, len as i32);
                             }
                             let mut stream = cli
                                 .streaming(tonic::Request::new(send_stream), path, MyCodec)
@@ -307,12 +282,7 @@ pub extern "C" fn libffi_init(_cfg: *mut c_char, tq: *const c_void) -> c_int {
                             while let Some(task) = recv_rx.recv().await {
                                 if let Some(res) = stream.message().await.unwrap() {
                                     unsafe {
-                                        ngx_http_lua_ffi_respond(
-                                            task.0,
-                                            0,
-                                            res.0,
-                                            res.1 as i32,
-                                        );
+                                        ngx_http_lua_ffi_respond(task.0, 0, res.0, res.1 as i32);
                                     }
                                 } else {
                                     unsafe {
@@ -357,24 +327,14 @@ pub extern "C" fn libffi_init(_cfg: *mut c_char, tq: *const c_void) -> c_int {
                     CLOSE_STREAM => {
                         streams.lock().unwrap().remove(&cmd.key);
                         unsafe {
-                            ngx_http_lua_ffi_respond(
-                                task.0,
-                                0,
-                                std::ptr::null_mut(),
-                                0,
-                            );
+                            ngx_http_lua_ffi_respond(task.0, 0, std::ptr::null_mut(), 0);
                         }
                     }
                     CLOSE_SEND => {
                         let (_, recv_tx) = streams.lock().unwrap().remove(&cmd.key).unwrap();
                         streams.lock().unwrap().insert(cmd.key, (None, recv_tx));
                         unsafe {
-                            ngx_http_lua_ffi_respond(
-                                task.0,
-                                0,
-                                std::ptr::null_mut(),
-                                0,
-                            );
+                            ngx_http_lua_ffi_respond(task.0, 0, std::ptr::null_mut(), 0);
                         }
                     }
                     _ => todo!(),
