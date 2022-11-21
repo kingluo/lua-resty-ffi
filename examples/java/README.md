@@ -1,47 +1,89 @@
-# JAVA ffi lib
+# JAVA ffi library
 
-## Build
+It uses [`jnr-ffi`](https://github.com/jnr/jnr-ffi) to call lua-resty-ffi C APIs.
+
+* `echo-demo`
+
+Echo the request.
+
+* `http2-demo`
+
+Simple http2 client. Requires openjdk >= 11.
+
+## Install maven if not yet
 
 ```bash
-cd examples/lib_ffi_java
-apt install openjdk-17-jdk
-gcc -shared -fPIC -o lib_ffi_java.so main.c -I../../ -I/usr/lib/jvm/java-17-openjdk-amd64/include/ -I/usr/lib/jvm/java-17-openjdk-amd64/include/linux/ -L/usr/lib/jvm/java-17-openjdk-amd64/lib/ -L/usr/lib/jvm/java-17-openjdk-amd64/lib/server/ -ljli -ljvm -lpthread
-(cd http2-demo; mvn -DskipTests=true -Dmaven.test.skip=true package)
-(cd echo-demo; mvn -DskipTests=true -Dmaven.test.skip=true package)
+wget --no-check-certificate https://dlcdn.apache.org/maven/maven-3/3.8.6/binaries/apache-maven-3.8.6-bin.tar.gz
+rm -rf /usr/local/apache-maven-3.8.6 && tar -C /usr/local -xzf apache-maven-3.8.6-bin.tar.gz
+export PATH=/usr/local/apache-maven-3.8.6/bin:$PATH
 ```
 
-## Test
+## Build and test
 
 ```bash
-CLASSPATH=$PWD:$PWD/http2-demo/target/http2-demo-1.0-SNAPSHOT-jar-with-dependencies.jar:$PWD/echo-demo/target/echo-demo-1.0-SNAPSHOT-jar-with-dependencies.jar LD_LIBRARY_PATH=/usr/lib/jvm/java-17-openjdk-amd64/lib/:/usr/lib/jvm/java-11-openjdk-amd64/lib/server:$PWD /opt/nffi/nginx/sbin/nginx -p $PWD -c nginx.conf -g "daemon off;"
+# in one terminal
+make
+make run
+# or specify nginx executable file path
+# make run NGINX=/path/to/nginx
 
-curl localhost:10000
+# in another terminal
+make test
+```
 
-:status: 200
-access-control-allow-credentials: true
-access-control-allow-origin: *
-server: gunicorn/19.9.0
-content-length: 375
-date: Thu, 15 Sep 2022 15:50:24 GMT
-content-type: application/json
-{
-  "args": {},
-  "data": "foobar",
-  "files": {},
-  "form": {},
-  "headers": {
-    "Content-Length": "6",
-    "Host": "httpbin.org",
-    "User-Agent": "Java-http-client/11.0.14.1",
-    "X-Amzn-Trace-Id": "Root=1-632349c0-652f912715f22bba007881ed"
-  },
-  "json": null,
-  "method": "GET",
-  "origin": "xxx",
-  "url": "https://httpbin.org/anything/get"
+## Library Skelton
+
+```java
+class PollThread implements Runnable {
+    ...
+    public void run() {
+        Libc libc = LibraryLoader.create(Libc.class).load("c");
+        FFI ffi = LibraryLoader.create(FFI.class).load(LibraryLoader.DEFAULT_LIBRARY);
+        var tq = Pointer.wrap(jnr.ffi.Runtime.getSystemRuntime(), this.tq);
+        IntByReference ap = new IntByReference();
+
+        while(true) {
+            // poll a task
+            var task = ffi.ngx_http_lua_ffi_task_poll(tq);
+            // if the task queue is done, then quit
+            if (task == null) {
+                break;
+            }
+            
+            // get the request from the task
+            var req = ffi.ngx_http_lua_ffi_get_req(task, ap);
+            var len = ap.intValue();
+
+            // copy the request as response, allocated by C malloc()
+            // note that both request and response would be freed by nginx
+            var rsp = libc.malloc(len);
+            libc.memcpy(rsp, req, len);
+            ffi.ngx_http_lua_ffi_respond(task, 0, rsp, len);
+        }
+
+        System.out.println("exit java echo runtime");
+    }
 }
 
----------
-hello
+public class App
+{
+    // implement an entry function
+    public static int init(String cfg, long tq) {
+        // launch a thread to poll tasks
+        var pollThread = new PollThread(tq);
+        Thread thread = new Thread(pollThread);
+        thread.setDaemon(true);
+        thread.start();
+        return 0;
+    }
+}
+```
 
+Specify the entry class and function in lua and use it:
+
+```lua
+local demo = ngx.load_ffi("ffi_java", "demo.echo.App,init,")
+local ok, res = demo:echo("hello")
+assert(ok)
+assert(res == "hello")
 ```
