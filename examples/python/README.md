@@ -1,19 +1,71 @@
-# Python3 ffi lib
+# Python3 ffi library
 
-## Build
+It uses [`cffi`](https://cffi.readthedocs.io/) to call lua-resty-ffi C APIs.
+
+* `ffi/echo.py`
+
+Echo the request.
+
+* `ffi/kafka.py`
+
+Simple kafka client. Implements produce and consumer group.
+
+## Build and test
 
 ```bash
-apt install python3-dev libpython3-dev
-cd examples/lib_ffi_python3
-gcc $(python3-config --cflags) $(python3-config --ldflags) -o lib_ffi_python3.so main.c -lpython3.8 -fPIC -shared
+# in one terminal
+make
+make run
+# or specify nginx executable file path
+# make run NGINX=/path/to/nginx
+
+# in another terminal
+make test
 ```
 
-## Test
+## Library Skelton
 
-```bash
-pip3 install kafka-python cffi
-cd examples/lib_ffi_python3
-LD_LIBRARY_PATH=$PWD PYTHONPATH=$PWD /opt/nffi/nginx/sbin/nginx -p $PWD -c nginx.conf -g "daemon off;"
+```python
+class State:
+    def poll(self, tq):
+        while True:
+            # poll a task
+            task = C.ngx_http_lua_ffi_task_poll(ffi.cast("void*", tq))
+            # if the task queue is done, then quit
+            if task == ffi.NULL:
+                break
+            # get the request from the task
+            # It assumes the message in C string, so no need to get the request length
+            req = C.ngx_http_lua_ffi_get_req(task, ffi.NULL)
+            # copy the request as response, allocated by C strdup()
+            # note that both request and response would be freed by nginx
+            res = C.strdup(req)
+            C.ngx_http_lua_ffi_respond(task, 0, res, 0)
+        print("exit python echo runtime")
 
-curl localhost:10000
+# implement an entry function
+def init(cfg, tq):
+    # launch a thread to poll tasks
+    st = State()
+    t = threading.Thread(target=st.poll, args=(tq,))
+    t.daemon = True
+    t.start()
+    return 0
+```
+
+Specify the entry module and function in lua and use it:
+
+```lua
+local demo = ngx.load_ffi("ffi_python3", "ffi.echo,init",
+    {is_global = true, unpin = true})
+local ok, res = demo:echo("hello")
+assert(ok)
+assert(res == "hello")
+
+-- for python >= 3.8, you could use '?' as module suffix
+-- to indicate that the module is hot-reload, i.e.
+-- when the module gets loaded next time (after previous unload),
+-- it would reload the module instead of the VM cached version
+local demo = ngx.load_ffi("ffi_python3", "ffi.echo?,init",
+    {is_global = true, unpin = true})
 ```
