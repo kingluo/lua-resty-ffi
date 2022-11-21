@@ -29,13 +29,13 @@ static int init(state_t *state)
         module = last + 1;
     }
 
-#if PY_VERSION_HEX >= 0x03080000
     int lastpos = strlen(module) - 1;
     if (module[lastpos] == '?') {
         module[lastpos] = 0;
+#if PY_VERSION_HEX >= 0x03080000
         reload_module = 1;
-    }
 #endif
+    }
 
     PyObject *pName, *pModule, *pFunc;
     PyObject *pArgs, *pValue;
