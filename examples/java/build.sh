@@ -5,6 +5,11 @@ set -x
 . /etc/os-release
 
 if [[ $ID == "centos" ]]; then
+    if [[ $VERSION_ID == "7" ]]; then
+        source scl_source enable devtoolset-9
+    elif [[ $VERSION_ID == "8" ]]; then
+        source /opt/rh/gcc-toolset-9/enable
+    fi
     yum install java-11-openjdk-devel
     gcc -O2 -shared -fPIC -o libffi_java.so loader.c -I/usr/lib/jvm/java-11-openjdk/include/ -I/usr/lib/jvm/java-11-openjdk/include/linux/ -L/usr/lib/jvm/java-11-openjdk/lib/ -L/usr/lib/jvm/java-11-openjdk/lib/server/ -ljvm -pthread
 else
