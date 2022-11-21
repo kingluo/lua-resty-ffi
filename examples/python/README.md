@@ -14,12 +14,19 @@ Simple kafka client. Implements produce and consumer group.
 
 ```bash
 # in one terminal
+# start kafka container for test
+docker compose up -d
+
+# compile loader library
 make
+
+# run nginx
 make run
 # or specify nginx executable file path
 # make run NGINX=/path/to/nginx
 
 # in another terminal
+# curl the tests
 make test
 ```
 
