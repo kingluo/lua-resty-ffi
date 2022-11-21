@@ -14,7 +14,6 @@ run:
 .PHONY: test
 test:
 	curl localhost:20000/echo
-	curl localhost:20000/say_hello
 	curl localhost:20000/get_feature
 	curl localhost:20000/list_features
 	curl localhost:20000/record_route
