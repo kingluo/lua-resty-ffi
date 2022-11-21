@@ -77,3 +77,15 @@ cp -a $SRC/ffi.lua lua-resty-core-0.1.23/lib/resty/core/
 cd ..
 ./configure --prefix=/opt/resty_ffi --with-threads --with-cc-opt="$cc_opt" --with-ld-opt="$ld_opt" $@
 make install
+
+# compile and install luarocks for luajit and openssl from openresty
+cd /tmp
+wget https://github.com/luarocks/luarocks/archive/v3.8.0.tar.gz
+tar zxf v3.8.0.tar.gz
+cd luarocks-3.8.0
+./configure --with-lua=/usr/local/openresty/luajit
+make install
+export PATH=$PATH:/usr/local/bin
+mkdir ~/.luarocks
+luarocks config variables.OPENSSL_LIBDIR /usr/local/openresty/openssl111/lib
+luarocks config variables.OPENSSL_INCDIR /usr/local/openresty/openssl111/include
