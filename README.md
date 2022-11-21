@@ -44,7 +44,7 @@ and reuse their rich ecosystems directly? Yes, that's what lua-resty-ffi does.**
 
 ## Architecture
 
-![1663476422225](https://user-images.githubusercontent.com/4401042/190886217-9fb97d6c-bf3f-435d-bdd8-702ce86dde2d.png)
+![architecture](architecture.png)
 
 ## Concepts
 
