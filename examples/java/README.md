@@ -22,12 +22,16 @@ export PATH=/usr/local/apache-maven-3.8.6/bin:$PATH
 
 ```bash
 # in one terminal
+# compile loader library
 make
+
+# run nginx
 make run
 # or specify nginx executable file path
 # make run NGINX=/path/to/nginx
 
 # in another terminal
+# curl the tests
 make test
 ```
 
