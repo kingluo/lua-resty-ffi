@@ -18,13 +18,22 @@ source "$HOME/.cargo/env"
 ## Build and test
 
 ```bash
-# in one terminal
+# in terminal-1
+git clone https://github.com/hyperium/tonic
+cd tonic
+cargo run --release --bin routeguide-server
+
+# in terminal-2
+
+# build examples libraries
 make
+
+# run nginx
 make run
 # or specify nginx executable file path
 # make run NGINX=/path/to/nginx
 
-# in another terminal
+# in terminal-3
 make test
 ```
 
