@@ -49,16 +49,15 @@ pub extern "C" fn libffi_init(cfg: *mut c_char, tq: *const c_void) -> c_int {
     }
     let cfg: Value = cfg.unwrap();
 
-    let handle = TaskQueueHandle(tq);
-    let handle = Arc::new(Mutex::new(handle));
+    let tq = TaskQueueHandle(tq);
     thread::spawn(move || {
         println!("cfg: {:?}", cfg);
-        let tq = handle.lock().unwrap().0;
+        let tq = tq.clone();
         let nullptr = std::ptr::null_mut();
         loop {
             unsafe {
                 // poll a task
-                let task = ngx_http_lua_ffi_task_poll(tq);
+                let task = ngx_http_lua_ffi_task_poll(tq.0);
                 // if the task queue is done, then quit
                 if task.is_null() {
                     break;
