@@ -7,6 +7,7 @@ build:
 
 .PHONY: run
 run:
+	luarocks install lua-protobuf
 	@bash -c '[[ -d logs ]] || mkdir logs'
 	LD_LIBRARY_PATH=$(PWD)/grpc_client/target/release:$(PWD)/echo/target/release $(NGINX) -p $(PWD) -c nginx.conf
 
