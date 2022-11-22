@@ -83,7 +83,7 @@ cd /tmp
 wget https://github.com/luarocks/luarocks/archive/v3.8.0.tar.gz
 tar zxf v3.8.0.tar.gz
 cd luarocks-3.8.0
-./configure --with-lua=/usr/local/openresty/luajit
+./configure --with-lua=/opt/resty_ffi/luajit
 make install
 export PATH=$PATH:/usr/local/bin
 mkdir ~/.luarocks

@@ -5,11 +5,13 @@ set -x
 . /etc/os-release
 
 if [[ $ID == "centos" ]]; then
+    set +eu
     if [[ $VERSION_ID == "7" ]]; then
         source scl_source enable devtoolset-9
     elif [[ $VERSION_ID == "8" ]]; then
         source /opt/rh/gcc-toolset-9/enable
     fi
+    set -eu
     yum -y install python3-devel
     gcc $(python3-config --cflags) $(python3-config --ldflags) -o libffi_python3.so loader.c \
         -fPIC -shared -pthread
