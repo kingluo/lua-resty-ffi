@@ -19,6 +19,21 @@ source "$HOME/.cargo/env"
 
 ```bash
 # in terminal-1
+
+# Install protoc-3 if not yet
+# https://grpc.io/docs/protoc-installation/
+PB_REL="https://github.com/protocolbuffers/protobuf/releases"
+curl -LO $PB_REL/download/v3.15.8/protoc-3.15.8-linux-x86_64.zip
+unzip protoc-3.15.8-linux-x86_64.zip -d /usr/local
+
+# install lua-protobuf
+# for centos7
+source scl_source enable devtoolset-9
+# for centos8
+source /opt/rh/gcc-toolset-9/enable
+luarocks install lua-protobuf'
+
+# run tonic grpc test server
 git clone https://github.com/hyperium/tonic
 cd tonic
 cargo run --release --bin routeguide-server
