@@ -26,7 +26,7 @@ apt -y install python3-dev python3-pip libffi-dev
 # in one terminal
 
 # install latest docker version
-# https://docs.docker.com/engine/install/centos/
+# https://docs.docker.com/engine/install/
 
 # start kafka container for test
 docker compose up -d

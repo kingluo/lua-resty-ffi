@@ -24,7 +24,7 @@ export PATH=$PATH:/usr/local/go/bin
 # in one terminal
 
 # install latest docker version
-# https://docs.docker.com/engine/install/centos/
+# https://docs.docker.com/engine/install/
 
 # start etcd container for test
 docker compose up -d
