@@ -10,6 +10,16 @@ Echo the request.
 
 Simple kafka client. Implements produce and consumer group.
 
+## Install python3-dev
+
+```bash
+# for centos
+yum -y install python3-devel
+
+# for ubuntu
+apt -y install python3-dev python3-pip libffi-dev
+```
+
 ## Build and test
 
 ```bash
