@@ -262,26 +262,3 @@ All above APIs are thread-safe. So you could use them in anywhere in your thread
 * `rsp_len` the length of response, may be `0` if the `rsp` is NULL or `\0' terminated C string.
 
 If `rc` is non-zero, then the runtime may also set `rsp` and `rsp_len` if it need to return error data.
-
-## How to set `LD_LIBRARY_PATH`?
-
-Dynamic linker will ignore some environment variables, e.g. `LD_LIBRARY_PATH`, when run with setuid.
-See [`ld.so(8)`](https://man7.org/linux/man-pages/man8/ld.so.8.html).
-
-That is, when you use [`user user [group];`](http://nginx.org/en/docs/ngx_core_module.html#user) in `nginx.conf`,
-`dlopen()` used by luajit `ffi.load()` would not use `LD_LIBRARY_PATH` as library search paths.
-
-The workaround is to set `LD_LIBRARY_PATH` globally.
-
-For example, set `LD_LIBRARY_PATH` for java:
-
-```bash
-cat > /etc/ld.so.conf.d/ffi.conf <<EOF
-/usr/lib/jvm/java-11-openjdk-amd64/lib
-/usr/lib/jvm/java-11-openjdk-amd64/lib/server
-/opt/lua-resty-ffi/examples/java
-EOF
-
-# update ld.so.cache
-ldconfig
-```
