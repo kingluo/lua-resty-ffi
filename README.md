@@ -266,6 +266,8 @@ If `rc` is non-zero, then the runtime may also set `rsp` and `rsp_len` if it nee
 ## How to set `LD_LIBRARY_PATH`?
 
 Dynamic linker will ignore some environment variables, e.g. `LD_LIBRARY_PATH`, when run with setuid.
+See [`ld.so(8)`](https://man7.org/linux/man-pages/man8/ld.so.8.html).
+
 That is, when you use [`user user [group];`](http://nginx.org/en/docs/ngx_core_module.html#user) in `nginx.conf`,
 `dlopen()` used by luajit `ffi.load()` would not use `LD_LIBRARY_PATH` as library search paths.
 
