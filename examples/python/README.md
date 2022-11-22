@@ -14,6 +14,10 @@ Simple kafka client. Implements produce and consumer group.
 
 ```bash
 # in one terminal
+
+# install latest docker version
+# https://docs.docker.com/engine/install/centos/
+
 # start kafka container for test
 docker compose up -d
 
