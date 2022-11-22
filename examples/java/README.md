@@ -8,9 +8,19 @@ Echo the request.
 
 * `http2-demo`
 
-Simple http2 client. Requires openjdk >= 11.
+Simple http2 client.
 
-## Install maven if not yet
+## Install openjdk-11
+
+```bash
+# for centos
+yum -y install java-11-openjdk-devel
+
+# for ubuntu
+apt -y install openjdk-11-jdk
+```
+
+## Install maven
 
 ```bash
 wget --no-check-certificate https://dlcdn.apache.org/maven/maven-3/3.8.6/binaries/apache-maven-3.8.6-bin.tar.gz
