@@ -1,4 +1,4 @@
-NGINX ?= /opt/resty_ffi/nginx/sbin/nginx
+NGINX_BIN ?= /opt/resty_ffi/nginx/sbin/nginx
 
 .PHONY: build
 build:
@@ -9,7 +9,7 @@ build:
 .PHONY: run
 run:
 	@bash -c '[[ -d logs ]] || mkdir logs'
-	LD_LIBRARY_PATH=$(PWD) $(NGINX) -p $(PWD) -c nginx.conf
+	LD_LIBRARY_PATH=$(PWD) $(NGINX_BIN) -p $(PWD) -c nginx.conf
 
 .PHONY: test
 test:

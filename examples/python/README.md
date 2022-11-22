@@ -23,7 +23,7 @@ make
 # run nginx
 make run
 # or specify nginx executable file path
-# make run NGINX=/path/to/nginx
+# make run NGINX_BIN=/path/to/nginx
 
 # in another terminal
 # curl the tests
