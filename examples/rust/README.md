@@ -31,14 +31,8 @@ unzip protoc-3.15.8-linux-x86_64.zip -d /usr/local
 source scl_source enable devtoolset-9
 # for centos8
 source /opt/rh/gcc-toolset-9/enable
-luarocks install lua-protobuf'
 
-# run tonic grpc test server
-git clone https://github.com/hyperium/tonic
-cd tonic
-cargo run --release --bin routeguide-server
-
-# in terminal-2
+luarocks install lua-protobuf
 
 # build examples libraries
 make
@@ -48,8 +42,26 @@ make run
 # or specify nginx executable file path
 # make run NGINX_BIN=/path/to/nginx
 
+# in terminal-2
+
+# run tonic grpc test server
+cd /opt
+git clone https://github.com/hyperium/tonic
+cd tonic
+cargo run --release --bin routeguide-server
+
 # in terminal-3
 make test
+
+#
+# test TLS
+#
+
+# in terminal-2
+cargo run --release --bin tls-client-auth-server
+
+# in terminal-3
+curl localhost:20000/tls
 ```
 
 ## Library Skelton

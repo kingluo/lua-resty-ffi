@@ -21,8 +21,6 @@ export PATH=$PATH:/usr/local/go/bin
 ## Build and test
 
 ```bash
-# in one terminal
-
 # install latest docker version
 # https://docs.docker.com/engine/install/
 

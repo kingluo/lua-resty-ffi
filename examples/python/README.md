@@ -23,13 +23,14 @@ apt -y install python3-dev python3-pip libffi-dev
 ## Build and test
 
 ```bash
-# in one terminal
-
 # install latest docker version
 # https://docs.docker.com/engine/install/
 
 # start kafka container for test
 docker compose up -d
+
+# ensure kafka is ready
+docker compose logs -f
 
 # compile loader library
 make

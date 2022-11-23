@@ -14,7 +14,10 @@ lua-resty-ffi provides an efficient and generic API to do hybrid programming in 
 Take golang as example:
 
 ```bash
-# in one terminal
+cd /opt
+git clone https://github.com/kingluo/lua-resty-ffi
+cd lua-resty-ffi
+
 # compile and install openresty with lua-resty-ffi
 ./build.sh
 

@@ -31,7 +31,6 @@ export PATH=/usr/local/apache-maven-3.8.6/bin:$PATH
 ## Build and test
 
 ```bash
-# in one terminal
 # compile loader library
 make
 
