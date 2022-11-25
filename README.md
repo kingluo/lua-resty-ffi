@@ -115,6 +115,10 @@ into the `ngx_thread_pool_done` queue directly and notify the nginx epoll loop v
 the nginx would resumes the lua coroutine then. Note that the response would be
 freed by lua-resty-ffi, so no need to care about it in your runtime.
 
+## Benchmark
+
+[Benchmark compared to unix domain socket.](benchmark.md)
+
 ## Lua API
 
 ### `local runtime = ngx.load_ffi(lib, cfg, opts)`
