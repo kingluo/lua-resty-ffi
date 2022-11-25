@@ -123,7 +123,7 @@ curl 'localhost:20000/benchmark?times=100000&arr=512,4096,10240,102400'
 
 ![One CPU Benchmark](benchmark1.png)
 
-![Two CPU Benchmark](benchmark1.png)
+![Two CPU Benchmark](benchmark2.png)
 
 Here I use `taskset` to simulate one CPU scenario.
 Send 100,000 requests, in lenght of 512B, 4096B, 10KB, 100KB perspectively.
