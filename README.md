@@ -59,7 +59,7 @@ WASM has below shortages, which make it not suitable for openresty:
   * Rust: You have to use specialized crates to do jobs, e.g. when you need async network programming,
 [tokio](https://tokio.rs/) is unavailable, instead, you have to use WASI based crates, e.g. [`wasmedge_wasi_socket`](https://wasmedge.org/book/en/write_wasm/rust/networking-nonblocking.html).
   * Python: You have to use implementations which support WASM, e.g. rustpython.
-* complex development, due to sandbox original intention, you have to export a lot of API for callbacks from nginx
+* complex development, due to sandbox original intention, you have to export a lot of API from nginx
 
 **So, may I extend the openresty with modern programming languages (Go, Python, Java, Rust, etc.)
 and reuse their rich ecosystems directly? Yes, that's what lua-resty-ffi does.**
