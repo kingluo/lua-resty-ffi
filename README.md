@@ -1,6 +1,7 @@
 # lua-resty-ffi
 
-lua-resty-ffi provides an efficient and generic API to do hybrid programming in openresty with mainstream languages (Go, Python, Java, Rust, etc.).
+lua-resty-ffi provides an efficient and generic API to do hybrid programming in openresty with mainstream languages
+([Go](examples/go), [Python](examples/python), [Java](examples/java), [Rust](examples/rust), etc.).
 
 **Features:**
 * simple but extensible interface, supports any C ABI compliant language
