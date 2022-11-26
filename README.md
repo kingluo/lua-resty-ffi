@@ -21,6 +21,8 @@ git clone https://github.com/kingluo/lua-resty-ffi
 cd lua-resty-ffi
 
 # compile and install openresty with lua-resty-ffi
+# optionally, you could specify any compile options you need, e.g.
+# ./build.sh --with-pcre-jit --add-module=...
 ./build.sh
 
 cd examples/go
