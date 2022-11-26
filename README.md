@@ -168,8 +168,10 @@ Example:
 
 ```lua
 local opts = {is_global = true}
-local demo = ngx.load_ffi("libffi_python3.so",
+local demo = ngx.load_ffi("ffi_python3",
     [[ffi.kafka,init,{"servers":"localhost:9092", "topic":"foobar", "group_id": "foobar"}]], opts)
+
+local demo = ngx.load_ffi("ffi_go_etcd", "[\"localhost:2379\"]")
 ```
 
 ### `local ok, res_or_rc, err = runtime:call(req)`
