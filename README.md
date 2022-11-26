@@ -4,6 +4,7 @@ lua-resty-ffi provides an efficient and generic API to do hybrid programming in 
 ([Go](examples/go), [Python](examples/python), [Java](examples/java), [Rust](examples/rust), etc.).
 
 **Features:**
+* nonblcking, in coroutine way
 * simple but extensible interface, supports any C ABI compliant language
 * once and for all, no need to write C/Lua codes to do coupling anymore
 * high performance, [faster](benchmark.md) than unix domain socket way
