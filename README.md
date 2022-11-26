@@ -45,6 +45,10 @@ ok
 
 Please check directory of each programming language for detail.
 
+Also, check this blog post:
+
+[Implement Grpc Client in Rust for Openresty](http://luajit.io/post/implement-grpc-client-in-rust-for-openresty/)
+
 ## Background
 
 In openresty land, when you turn to implement some logic, especially to couple with third-party popular frameworks, it's likely to suck in awkward: make bricks without straw.
