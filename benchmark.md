@@ -106,7 +106,7 @@ ngx.flush(true)
 
 ### benchmark result
 
-I use AWS EC2 t2.medium to do the benchmark.
+I use AWS EC2 t2.medium (Ubuntu 22.04) to do the benchmark.
 
 ```bash
 # in terminal-1
