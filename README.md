@@ -7,7 +7,7 @@ lua-resty-ffi provides an efficient and generic API to do hybrid programming in 
 * simple but extensible interface, supports any C ABI compliant language
 * once and for all, no need to write C/Lua codes to do coupling anymore
 * high performance, [faster](benchmark.md) than unix domain socket way
-* loader library for python/java
+* generic loader library for python/java
 * any serialization message format you like
 
 ## Quickstart
