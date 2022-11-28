@@ -28,6 +28,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define _GNU_SOURCE
+#include <stdio.h>
 #include <jni.h>
 #include <string.h>
 #include <stdlib.h>
@@ -51,10 +53,12 @@ int libffi_init(char* cfg, void *tq)
         vm_args.nOptions = 0;
         vm_args.options = options;
 
+        char* path = NULL;
         char* class_path = getenv("CLASSPATH");
         if (class_path) {
-            char path[4096];
-            sprintf(path, "-Djava.class.path=%s", class_path);
+            if (asprintf(&path, "-Djava.class.path=%s", class_path) == -1) {
+                return 1;
+            }
             options[vm_args.nOptions++].optionString = path;
         }
 
@@ -73,6 +77,9 @@ int libffi_init(char* cfg, void *tq)
         }
 
         res = JNI_CreateJavaVM(&vm, (void **)&env, &vm_args);
+        if (path) {
+            free(path);
+        }
         if (opts) {
             free(opts);
         }
