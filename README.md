@@ -119,7 +119,7 @@ Why not call API provided by other languages?
 2. **Response**
 
 The runtime injects the response (also C `malloc()` char array)
-into the `ngx_thread_pool_done` queue directly and notify the nginx epoll loop via eventfd,
+into the `ngx_thread_pool_done` queue [**directly**](https://github.com/kingluo/lua-resty-ffi/blob/main/patches/ngx_thread_pool.c.patch) and notify the nginx epoll loop via eventfd,
 the nginx would resume the lua coroutine then. Note that the response would be
 freed by lua-resty-ffi, so no need to care about it in your runtime.
 
