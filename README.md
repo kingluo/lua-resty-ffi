@@ -4,7 +4,7 @@ lua-resty-ffi provides an efficient and generic API to do hybrid programming in 
 ([Go](examples/go), [Python](examples/python), [Java](examples/java), [Rust](examples/rust), etc.).
 
 **Features:**
-* nonblcking, in coroutine way
+* nonblocking, in coroutine way
 * simple but extensible interface, supports any C ABI compliant language
 * once and for all, no need to write C/Lua codes to do coupling anymore
 * high performance, [faster](benchmark.md) than unix domain socket way
@@ -13,7 +13,7 @@ lua-resty-ffi provides an efficient and generic API to do hybrid programming in 
 
 ## Quickstart
 
-Take golang as example:
+Take golang as an example:
 
 ```bash
 cd /opt
@@ -43,7 +43,7 @@ curl http://localhost:20000/echo
 ok
 ```
 
-Please check directory of each programming language for detail.
+Please check the directory of each programming language for detail.
 
 Also, check this blog post:
 
@@ -53,9 +53,9 @@ Also, check this blog post:
 
 In openresty land, when you turn to implement some logic, especially to couple with third-party popular frameworks, it's likely to suck in awkward: make bricks without straw.
 
-1. C is a low-level language, no unified and rich libraries and ecosystem, and most modern frameworks do not support C, instead, they like Java, Python, Go. C is suitable for fundamental software.
+1. C is a low-level language, with no unified and rich libraries and ecosystems, and most modern frameworks do not support C, instead, they like Java, Python, Go. C is suitable for fundamental software.
 
-2. Lua is an embedded and minimal programming language, which means all powers come from the host. In openresty, it means all functionalities come from lua-nginx-modules. Like C, or even worse, you have to reinvent the wheels via cosocket to do modern networking stuff. A lot of lua-resty-* were born, but they are almost semi-finished compared to native lib in other languages. For example, lua-resty-kafka doesn't support consumer groups, lua-resty-postgres doesn't support notify and prepared statements, etc. Moreover, most of those authors of lua-resty-* stop development at some stage because the lua community is so small and less attractive.
+2. Lua is an embedded and minimal programming language, which means all powers come from the host. In openresty, it means all functionalities come from lua-nginx-modules. Like C, or even worse, you have to reinvent the wheels via cosocket to do modern networking stuff. A lot of `lua-resty-*` was born, but they are almost semi-finished compared to native lib in other languages. For example, `lua-resty-kafka` doesn't support consumer groups, `lua-resty-postgres` doesn't support notify and prepared statements, etc. Moreover, most of those authors of `lua-resty-*` stop development at some stage because the lua community is so small and less attractive.
 
 **Why not WASM?**
 
@@ -65,8 +65,8 @@ WASM has below shortages, which make it not suitable for openresty:
 * castrated language support, e.g.
   * Go: You have to use tinygo instead, not the batteries-included official golang.
   * Rust: You have to use specialized crates to do jobs, e.g. when you need async network programming,
-[tokio](https://tokio.rs/) is unavailable, instead, you have to use WASI based crates, e.g. [`wasmedge_wasi_socket`](https://wasmedge.org/book/en/write_wasm/rust/networking-nonblocking.html).
-  * Python: You have to use implementations which support WASM, e.g. rustpython.
+[tokio](https://tokio.rs/) is unavailable, instead, you have to use WASI-based crates, e.g. [`wasmedge_wasi_socket`](https://wasmedge.org/book/en/write_wasm/rust/networking-nonblocking.html).
+  * Python: You have to use implementations that support WASM, e.g. rustpython.
 * complex development, due to sandbox original intention, you have to export a lot of API from nginx
 
 **So, may I extend the openresty with modern programming languages (Go, Python, Java, Rust, etc.)
@@ -102,12 +102,12 @@ especially for Java and Python.
 
 ### Request-Response Model
 
-Coupling between nginx worker process and the runtime is based on message exchanges, which contains two directions:
+Coupling between nginx worker process and the runtime is based on message exchanges, which contain two directions:
 
 1. **Request**
 
 * the lua coroutine creates a task
-* associate the task with request message, which is C `malloc()` char array. Note that
+* associates the task with the request message, which is C `malloc()` char array. Note that
 this char array would be freed by lua-resty-ffi, and the runtime just uses it.
 * put the task into the thread-safe queue of the runtime and yield
 * the runtime polls this queue
@@ -120,7 +120,7 @@ Why not call API provided by other languages?
 
 The runtime injects the response (also C `malloc()` char array)
 into the `ngx_thread_pool_done` queue directly and notify the nginx epoll loop via eventfd,
-the nginx would resumes the lua coroutine then. Note that the response would be
+the nginx would resume the lua coroutine then. Note that the response would be
 freed by lua-resty-ffi, so no need to care about it in your runtime.
 
 ## Benchmark
@@ -134,9 +134,9 @@ freed by lua-resty-ffi, so no need to care about it in your runtime.
 Load and return the runtime
 
 * `lib`
-shared library name. It could be absolute file path or name only,
-or even short name (e.g. for `libdemo.so`, the short name is `demo`).
-When the `lib` is in name, it's searched according to `LD_LIBRARY_PATH` environment variable.
+shared library name. It could be an absolute file path or name only,
+or even a short name (e.g. for `libdemo.so`, the short name is `demo`).
+When the `lib` is name only or short name, it's searched according to `LD_LIBRARY_PATH` environment variable.
 
 * `cfg` configuration, it could be string or nil.
 
@@ -145,12 +145,12 @@ When the `lib` is in name, it's searched according to `LD_LIBRARY_PATH` environm
 ```lua
 {
     -- the maximum queue size for pending requests to the runtime.
-    -- it determines the throughput of requests, if the queue is full,
+    -- it determines the throughput of requests if the queue is full,
     -- all following requests would fail.
     max_queue = 65536,
 
-    -- denotes whether the symbols loaded from library
-    -- would be exported in global namespace, which is only necessary for python3.
+    -- denotes whether the symbols loaded from the library
+    -- would be exported in the global namespace, which is only necessary for python3.
     is_global = false,
 
     -- by default, all libraries handles would be cached by lua-resty-ffi
@@ -164,12 +164,12 @@ When the `lib` is in name, it's searched according to `LD_LIBRARY_PATH` environm
 }
 ```
 
-This API is idempotent. The loaded runtime is cached in internal table, where
+This API is idempotent. The loaded runtime is cached in an internal table, where
 the table key is `lib .. '&' .. cfg`.
 
 This function calls the `libffi_init()` of the library per key.
 
-It means the same library with different configuration would init a different new runtime,
+It means the same library with a different configuration would initiate a different new runtime,
 which is especially useful for python3 and Java.
 
 Example:
@@ -184,15 +184,15 @@ local demo = ngx.load_ffi("ffi_go_etcd", "[\"localhost:2379\"]")
 
 ### `local ok, res_or_rc, err = runtime:call(req)`
 
-Send a request to the rutnime and returns the response.
+Send a request to the runtime and returns the response.
 
 * `req` the request string, could be in any serialization format, e.g. json, protobuf, as long as it matches the runtime implementation.
 
 * `ok` return status, true or false.
 
-* `res_or_rc` response string, could be in any serialization format, e.g. json, protobuf, as long as it matches the runtime implementation. When the runtime returns non-zero `rc`, `ok` is false, the `res_or_rc` is the returned value by the runtime.
+* `res_or_rc` response string, could be in any serialization format, e.g. json, protobuf, as long as it matches the runtime implementation. When the runtime returns non-zero `rc`, `ok` is false, and the `res_or_rc` is the returned value by the runtime.
 
-* `err` the error string, it may exist only if `ok` is false. It may be nil if the runtime does not return error.
+* `err` the error string, it may exist only if `ok` is false. It may be nil if the runtime does not return an error.
 
 This method is nonblocking, which means the coroutine would yield waiting for the response and resume with the return values.
 
@@ -216,19 +216,19 @@ ngx.say(res)
 
 Unload the runtime, after that, no request could be sent to this runtime anymore.
 The runtime would receive a NULL task, and it must terminate everything including the threads.
-Note that it's an asynchronous processing, and the NULL task is appended to the queue, so
+Note that it's asynchronous processing, and the NULL task is appended to the queue, so
 all pending normal tasks would be handled first.
 
-## API provided by runtime
+## API provided by the runtime
 
 ### `int libffi_init(char* cfg, void *tq);`
 
 This API is provided by the library to initiate its logic and start the poll thread/goroutine.
 
-`cfg` is null-terminated C string, it would get freed by lua-resty-ffi
+`cfg` is a null-terminated C string, it would get freed by lua-resty-ffi
 after `libffi_init()` returns, which may be `NULL`.
 
-`tq` is the task queue pointer, used by below APIs.
+`tq` is the task queue pointer, used by the below APIs.
 
 Example:
 
@@ -254,14 +254,14 @@ func libffi_init(cfg *C.char, tq unsafe.Pointer) C.int {
 }
 ```
 
-## APIs used by runtime
+## APIs used by the runtime
 
 ### `void* ngx_http_lua_ffi_task_poll(void *tq);`
 
 Poll the task from the task queue assigned to the runtime.
 
 When it returns `NULL`, it denotes the runtime was unloaded, the runtime must clean up
-everything and do not access the task queue anymore (because the task queue was deallocated)!
+everything and not access the task queue anymore (because the task queue was deallocated)!
 
 ### `char* ngx_http_lua_ffi_get_req(void *tsk, int *len);`
 
@@ -270,12 +270,12 @@ in this case.
 
 ### `void ngx_http_lua_ffi_respond(void *tsk, int rc, char* rsp, int rsp_len);`
 
-Response the task.
+Response to the task.
 
-All above APIs are thread-safe. So you could use them in anywhere in your thread/goroutine of your runtime.
+All the above APIs are thread-safe. So you could use them anywhere in the thread/goroutine of your runtime.
 
-* `rc` return status, `0` means successful, other values means failure.
-* `rsp` response char array, may be NULL if the runtime does not need to response something.
-* `rsp_len` the length of response, may be `0` if the `rsp` is NULL or `\0' terminated C string.
+* `rc` return status, `0` means successful, and other values mean failure.
+* `rsp` response char array, may be NULL if the runtime does not need to respond to something.
+* `rsp_len` the length of response, maybe `0` if the `rsp` is NULL or `\0' terminated C string.
 
-If `rc` is non-zero, then the runtime may also set `rsp` and `rsp_len` if it need to return error data.
+If `rc` is non-zero, then the runtime may also set `rsp` and `rsp_len` if it needs to return error data.
