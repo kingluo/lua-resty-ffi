@@ -1,0 +1,5 @@
+*_temp/
+*.so
+*.h
+logs
+build/
