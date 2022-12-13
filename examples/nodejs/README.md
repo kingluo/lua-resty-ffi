@@ -60,23 +60,36 @@ const { Worker, isMainThread, parentPort } = require('node:worker_threads');
 const ffi = require("resty_ffi")
 
 if (isMainThread) {
+  // main thread logic
+  // define a module method to do init
   exports.init = (cfg, tq) => {
+    // create a worker thread
+    // note that the worker thread also requires this module
     var worker = new Worker(__filename);
+    // get a new task from nginx
     worker.on('message', (tsk) => {
       const req = ffi.get_req(tsk)
+      //
+      // handle request here...
+      //
       ffi.respond(tsk, 0, req)
     });
+    // tell the worker thread to do polling
     worker.postMessage(tq);
     return 0;
   };
 } else {
+  // worker thread logic
   parentPort.once('message', (tq) => {
     while (true) {
+      // poll task from nginx
       const tsk = ffi.poll_task(tq)
+      // if task queue is done, i.e. __unload() by lua, then exit
       if (tsk == 0) {
         console.log('exit ffi nodejs echo runtime');
         break;
       }
+      // notify the main thread to handle the request
       parentPort.postMessage(tsk);
     }
   });
