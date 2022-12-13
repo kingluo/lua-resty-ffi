@@ -1,14 +1,14 @@
 # lua-resty-ffi
 
 lua-resty-ffi provides an efficient and generic API to do hybrid programming in openresty with mainstream languages
-([Go](examples/go), [Python](examples/python), [Java](examples/java), [Rust](examples/rust), etc.).
+([Go](examples/go), [Python](examples/python), [Java](examples/java), [Rust](examples/rust), [Node.js](examples/nodejs) etc.).
 
 **Features:**
 * nonblocking, in coroutine way
 * simple but extensible interface, supports any C ABI compliant language
 * once and for all, no need to write C/Lua codes to do coupling anymore
 * high performance, [faster](benchmark.md) than unix domain socket way
-* generic loader library for python/java
+* generic loader library for python/java/nodejs
 * any serialization message format you like
 
 ## Quickstart
@@ -88,6 +88,8 @@ In Python3, it means the loader library `libffi_python3.so` with native python3 
 
 In Java, it means the loader library `libffi_java.so` with native Java classes/jar.
 
+In Node.js, it means the loader library `libffi_nodejs.so` with native nodejs modules.
+
 ### Library configuration
 
 Configuration of the library, e.g. etcd endpoints, kafka endpoints, etc.
@@ -100,7 +102,7 @@ The combination of library and configuration would init a new runtime,
 which represents some threads or goroutines to do jobs.
 
 You could use the same library with different configurations, which is very common,
-especially for Java and Python.
+especially for Java, Python and Node.js.
 
 ### Request-Response Model
 
@@ -152,7 +154,7 @@ When the `lib` is name only or short name, it's searched according to `LD_LIBRAR
     max_queue = 65536,
 
     -- denotes whether the symbols loaded from the library
-    -- would be exported in the global namespace, which is only necessary for python3.
+    -- would be exported in the global namespace, which is only necessary for python3 and nodejs.
     is_global = false,
 
     -- by default, all libraries handles would be cached by lua-resty-ffi
@@ -172,7 +174,7 @@ the table key is `lib .. '&' .. cfg`.
 This function calls the `libffi_init()` of the library per key.
 
 It means the same library with a different configuration would initiate a different new runtime,
-which is especially useful for python3 and Java.
+which is especially useful for python3, Java and Node.js.
 
 Example:
 
