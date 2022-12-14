@@ -34,7 +34,7 @@ git checkout v19.2.0
 
 ./configure --shared --shared-openssl --debug-node --gdb
 make -j2 install
-ln -sf /usr/local/lib/libnode.so.111 /usr/local/lib/libnode.so
+ln -sf libnode.so.111 /usr/local/lib/libnode.so
 ```
 
 ## Build and test
