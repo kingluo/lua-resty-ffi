@@ -8,8 +8,14 @@ NGINX_BIN=${NGINX_BIN:-/opt/resty_ffi/nginx/sbin/nginx}
 
 [[ -d logs ]] || mkdir logs
 
+export CLASSPATH=${PWD}/http2-demo/target/http2-demo-1.0-SNAPSHOT-jar-with-dependencies.jar
+CLASSPATH+=:${PWD}/echo-demo/target/echo-demo-1.0-SNAPSHOT-jar-with-dependencies.jar
+CLASSPATH+=:${PWD}/loader/target/resty-ffi-loader-1.0-SNAPSHOT-jar-with-dependencies.jar
+
 if [[ $ID == "centos" ]]; then
-    CLASSPATH=${PWD}/http2-demo/target/http2-demo-1.0-SNAPSHOT-jar-with-dependencies.jar:${PWD}/echo-demo/target/echo-demo-1.0-SNAPSHOT-jar-with-dependencies.jar LD_LIBRARY_PATH=/usr/lib/jvm/java-11-openjdk/lib/server:/usr/lib/jvm/java-11-openjdk/lib:${PWD} ${NGINX_BIN} -p ${PWD} -c nginx.conf
+    export LD_LIBRARY_PATH=/usr/lib/jvm/java-11-openjdk/lib/server:/usr/lib/jvm/java-11-openjdk/lib:${PWD}
 else
-    CLASSPATH=${PWD}/http2-demo/target/http2-demo-1.0-SNAPSHOT-jar-with-dependencies.jar:${PWD}/echo-demo/target/echo-demo-1.0-SNAPSHOT-jar-with-dependencies.jar LD_LIBRARY_PATH=/usr/lib/jvm/java-11-openjdk-amd64/lib/server:/usr/lib/jvm/java-11-openjdk-amd64/lib:${PWD} ${NGINX_BIN} -p ${PWD} -c nginx.conf
+    export LD_LIBRARY_PATH=/usr/lib/jvm/java-11-openjdk-amd64/lib/server:/usr/lib/jvm/java-11-openjdk-amd64/lib:${PWD}
 fi
+
+${NGINX_BIN} -p ${PWD} -c nginx.conf

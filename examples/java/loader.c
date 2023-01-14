@@ -89,32 +89,47 @@ int libffi_init(char* cfg, void *tq)
         }
     }
 
+    char* orig_cfg = strdup(cfg);
     char* str = cfg;
     char* class = strsep(&str, ",");
-    for (char* tmp = class; *tmp != 0; tmp++) {
-        if (*tmp == '.') {
-            *tmp = '/';
+    int dyn_flag = class[strlen(class)-1] == '?';
+    if (dyn_flag) {
+        class = "resty/ffi/Loader";
+    } else {
+        for (char* tmp = class; *tmp != 0; tmp++) {
+            if (*tmp == '.') {
+                *tmp = '/';
+            }
         }
     }
+
     char* method = strsep(&str, ",");
     char* cfg_str= str;
 
     jclass          cls;
     jmethodID       mid;
+    jstring         jcfg;
 
     cls = (*env)->FindClass(env, class);
     if (cls == NULL) {
         printf("Failed to find Main class\n");
+        free(orig_cfg);
         return 1;
     }
 
     mid = (*env)->GetStaticMethodID(env, cls, method, "(Ljava/lang/String;J)I");
     if (mid == NULL) {
         printf("Failed to find main function\n");
+        free(orig_cfg);
         return 1;
     }
 
-    jstring jcfg = (*env)->NewStringUTF(env, cfg_str);
+    if (dyn_flag) {
+        jcfg = (*env)->NewStringUTF(env, orig_cfg);
+        free(orig_cfg);
+    } else {
+        jcfg = (*env)->NewStringUTF(env, cfg_str);
+    }
     int rc = (*env)->CallStaticIntMethod(env, cls, mid, jcfg, (jlong)tq);
     (*env)->DeleteLocalRef(env, jcfg);
 
