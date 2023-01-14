@@ -28,39 +28,39 @@ interface F1<A, T> {
      * @param obj The parameter
      * @return Result of execution
      */
-	T e(A obj);
+    T e(A obj);
 }
 
 class IOUtil {
-	/**
-	 * Read the stream into byte array
-	 * @param inputStream
-	 * @return
-	 * @throws java.io.IOException
-	 */
+    /**
+     * Read the stream into byte array
+     * @param inputStream
+     * @return
+     * @throws java.io.IOException
+     */
     public static byte[] readData(InputStream inputStream) {
         try {
-			return readDataNice(inputStream);
-		} finally {
-        	close(inputStream);
-		}
+            return readDataNice(inputStream);
+        } finally {
+            close(inputStream);
+        }
     }
 
     public static byte[] readDataNice(InputStream inputStream) {
-		ByteArrayOutputStream boTemp = null;
+        ByteArrayOutputStream boTemp = null;
         byte[] buffer = null;
         try {
             int read;
-			buffer = new byte[8192];
+            buffer = new byte[8192];
             boTemp = new ByteArrayOutputStream();
             while ((read=inputStream.read(buffer, 0, 8192)) > -1) {
                 boTemp.write(buffer, 0, read);
             }
             return boTemp.toByteArray();
         } catch (IOException e) {
-			throw new RuntimeException(e);
+            throw new RuntimeException(e);
         }
-	}
+    }
 
     /**
      * Close streams (in or out)
@@ -178,13 +178,13 @@ class DynamicClassLoader extends AggressiveClassLoader {
         return file.exists() ? file : null;
     }
 
-	public static byte[] readFileToBytes(File fileToRead) {
-		try {
-			return IOUtil.readData(new FileInputStream(fileToRead));
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
+    public static byte[] readFileToBytes(File fileToRead) {
+        try {
+            return IOUtil.readData(new FileInputStream(fileToRead));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public static F1<String, byte[]> dirLoader(final File dir) {
         return filePath -> {
@@ -235,25 +235,25 @@ class DynamicClassLoader extends AggressiveClassLoader {
 public class Loader
 {
     public static int init(String cfg, long tq) {
-		try {
-			var cfgItems = cfg.split(",");
+        try {
+            var cfgItems = cfg.split(",");
             var clsName = cfgItems[0];
             clsName = clsName.substring(0, clsName.length() - 1);
-			String classpath = System.getenv("CLASSPATH");
-			var paths = classpath.split(":");
+            String classpath = System.getenv("CLASSPATH");
+            var paths = classpath.split(":");
 
             var tmp = clsName.split("\\.");
             var prefix = String.join(".", Arrays.copyOfRange(tmp, 0, tmp.length-1));
 
             Class<?> cls = new DynamicClassLoader(paths, prefix).load(clsName);
-			var method = cls.getDeclaredMethod(cfgItems[1], String.class, long.class);
-			Object ret = method.invoke(null, cfgItems.length > 2 ? cfgItems[2] : "", tq);
-			int rc = ((Integer)ret).intValue();
+            var method = cls.getDeclaredMethod(cfgItems[1], String.class, long.class);
+            Object ret = method.invoke(null, cfgItems.length > 2 ? cfgItems[2] : "", tq);
+            int rc = ((Integer)ret).intValue();
             System.out.println(rc);
             return rc;
-		} catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-		}
+        }
         return 1;
-	}
+    }
 }
