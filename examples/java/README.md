@@ -99,4 +99,10 @@ local demo = ngx.load_ffi("ffi_java", "demo.echo.App,init,")
 local ok, res = demo:echo("hello")
 assert(ok)
 assert(res == "hello")
+
+-- You could use '?' as class suffix to indicate that
+-- all classes within the package of the target class are hot-reload.
+-- When the class gets loaded next time (after previous unload),
+-- it would reload the class instead of the cached version.
+local demo = ngx.load_ffi("ffi_java", "demo.echo.App?,init,")
 ```
