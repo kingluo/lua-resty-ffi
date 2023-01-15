@@ -12,18 +12,15 @@ Let's recall the lua API:
 
 `local runtime = ngx.load_ffi(lib, cfg, opts)`
 
-`cfg`: configuration in any format, e.g. plain string, JSON.
+`cfg`: configuration in any format, e.g. plain string, JSON, or null (sometimes we don't need configuration).
 
 For Go and Rust, `lib` is the library you compiled for some usage. Different projects compiles out different library file.
 
-For example, you could write a etcd client library and load it with some configuration:
+For example, you could write an etcd client library and load it with some configuration:
 
 ```lua
 -- here the configuration is the etcd server addresses, in JSON array
 local demo = ngx.load_ffi("ffi_go_etcd", "[\"localhost:2379\"]")
-
--- of course, the configuration could be null.
-local demo = ngx.load_ffi("ffi_go_echo")
 ```
 
 For Python, Java and Nodejs, the library is the fixed loader library, and the `cfg` is in csv format,
@@ -96,7 +93,7 @@ so removing the cached version before loading accomplishes the hot-reload.
 
 Each class is associated with its classloader.
 
-In brief, writing a **anti-parent-delegation** classloader,
+In brief, writing an **anti-parent-delegation** classloader,
 each time you load a class, you create a new classloader to load it,
 then hot-reload is done.
 
