@@ -58,7 +58,7 @@ When the configuration is changed, we need to release the old configuration, i.e
 This is done by appending a null message to the request queue of the runtime, which notifies the
 poll thread of the runtime to cleanup everything.
 The advantage is the shutdown happens after all pending messages get handled, i.e. graceful shutdown.
-The disadvantage is it may makes some arbitrary time.
+The disadvantage is it makes some arbitrary time.
 
 The lua API is:
 
