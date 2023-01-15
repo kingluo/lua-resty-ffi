@@ -16,7 +16,9 @@ Let's recall the lua API:
 
 For Go and Rust, `lib` is the library you compiled for some usage. Different projects compiles out different library file.
 
-For example, you could write an etcd client library and load it with some configuration:
+For example, you could write an
+[etcd client library](https://github.com/kingluo/lua-resty-ffi/blob/main/examples/go/etcd.go)
+and load it with some configuration:
 
 ```lua
 -- here the configuration is the etcd server addresses, in JSON array
