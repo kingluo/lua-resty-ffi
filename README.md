@@ -127,7 +127,7 @@ into the `ngx_thread_pool_done` queue [**directly**](https://github.com/kingluo/
 the nginx would resume the lua coroutine then. Note that the response would be
 freed by lua-resty-ffi, so no need to care about it in your runtime.
 
-## Benchmark
+## IPC design and Benchmark
 
 [Benchmark compared to unix domain socket.](benchmark.md)
 
