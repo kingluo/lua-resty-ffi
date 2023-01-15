@@ -100,6 +100,10 @@ then hot-reload is done.
 Note that a java file may be compiled into multiple classes,
 so hot-realod should happen at the package level of the java file.
 
+Please check this blog for detail:
+
+http://luajit.io/post/java-class-reloading/
+
 ### Go
 
 For static and machine-code-compiled languages, it's not easy to do code hot-reload.
