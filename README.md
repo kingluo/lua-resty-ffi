@@ -283,3 +283,7 @@ All the above APIs are thread-safe. So you could use them anywhere in the thread
 * `rsp_len` the length of response, maybe `0` if the `rsp` is NULL or `\0' terminated C string.
 
 If `rc` is non-zero, then the runtime may also set `rsp` and `rsp_len` if it needs to return error data.
+
+## Code hot-reload
+
+[How to do code hot-reload in lua-resty-ffi?](https://github.com/kingluo/lua-resty-ffi/blob/main/hot-reload.md)
