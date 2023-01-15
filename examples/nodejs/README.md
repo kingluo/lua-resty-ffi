@@ -8,6 +8,12 @@ Echo the request.
 
 Simple http2 client.
 
+## Background
+
+Check my blog for detail:
+
+http://luajit.io/post/use-nodejs-to-extend-openresty/
+
 ## Build and install Node.js
 
 Node.js doesn't provide shared library officially,
