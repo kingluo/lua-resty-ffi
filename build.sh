@@ -73,7 +73,7 @@ for f in $SRC/patches/*; do
 done
 
 cp -a $SRC/ngx_http_lua_ffi.c ngx_lua-0.10.21/src/
-cp -a $SRC/ffi.lua lua-resty-core-0.1.23/lib/resty/core/
+cp -a $SRC/resty_ffi.lua lua-resty-core-0.1.23/lib/resty/core/
 
 cd ..
 ./configure --prefix=/opt/resty_ffi --with-threads --with-cc-opt="$cc_opt" --with-ld-opt="$ld_opt" $@

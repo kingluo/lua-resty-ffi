@@ -1,0 +1,15 @@
+INST_PREFIX ?= /usr
+INST_LIBDIR ?= $(INST_PREFIX)/lib/lua/5.1
+INST_LUADIR ?= $(INST_PREFIX)/share/lua/5.1
+INSTALL ?= install
+
+.PHONY: build
+build:
+	./build_shared.sh
+
+.PHONY: install
+install:
+	$(INSTALL) -d $(INST_LUADIR)/
+	$(INSTALL) resty_ffi.lua $(INST_LUADIR)/
+	$(INSTALL) -d $(INST_LIBDIR)/
+	$(INSTALL) libresty_ffi.so $(INST_LIBDIR)/

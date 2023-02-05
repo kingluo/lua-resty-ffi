@@ -4,5 +4,5 @@
      require "resty.core.phase"
      require "resty.core.ndk"
      require "resty.core.socket"
-+    require "resty.core.ffi"
++    require "resty.core.resty_ffi"
  end

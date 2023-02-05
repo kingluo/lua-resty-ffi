@@ -42,7 +42,91 @@
 
 
 #include <ngx_thread_pool.h>
+
+#ifndef SHARED_OBJECT
+
 extern void ngx_thread_pool_notify_inject(void *task);
+
+#else
+
+#include <stdlib.h>
+
+#include <ngx_core.h>
+
+#include "symbols.h"
+#include "build-id.h"
+
+typedef struct {
+    ngx_thread_task_t        *first;
+    ngx_thread_task_t       **last;
+} ngx_thread_pool_queue_t;
+
+static ngx_atomic_t* ngx_thread_pool_done_lock;
+static ngx_thread_pool_queue_t* ngx_thread_pool_done;
+static ngx_event_handler_pt ngx_thread_pool_handler;
+
+int
+lua_resty_ffi_init()
+{
+    // check if build-id matches
+    const struct build_id_note *note = build_id_find_nhdr_by_name("");
+    if (!note)
+        return -1;
+
+    ElfW(Word) len = build_id_length(note);
+
+    const uint8_t *build_id = build_id_data(note);
+
+    char* buf = (char*)calloc(len*2, 1);
+    for (ElfW(Word) i = 0; i < len; i++) {
+        sprintf(buf + strlen(buf), "%02x", build_id[i]);
+    }
+
+    if (strcmp(buf, NGX_BUILD_ID) != 0) {
+        printf("build-id mismatch, expected=%s, actual=%s\n", buf, NGX_BUILD_ID);
+        free(buf);
+        return -2;
+    }
+
+    // resolve symbols
+    char* addr;
+    addr = (char*)&ngx_cycle;
+    addr += NGX_THREAD_POOL_DONE_OFFSET;
+    ngx_thread_pool_done = (ngx_thread_pool_queue_t*)addr;
+
+    addr = (char*)&ngx_cycle;
+    addr += NGX_THREAD_POOL_DONE_LOCK_OFFSET;
+    ngx_thread_pool_done_lock = (ngx_atomic_t*)addr;
+
+    addr = (char*)&ngx_calloc;
+    addr += NGX_THREAD_POOL_HANDLER_OFFSET;
+    ngx_thread_pool_handler = (ngx_event_handler_pt)addr;
+
+    free(buf);
+
+    return 0;
+}
+
+static void
+ngx_thread_pool_notify_inject(void *data)
+{
+    ngx_thread_task_t *task = data;
+
+    task->next = NULL;
+
+    ngx_spinlock(ngx_thread_pool_done_lock, 1, 2048);
+
+    *((*ngx_thread_pool_done).last) = task;
+    (*ngx_thread_pool_done).last = &task->next;
+
+    ngx_memory_barrier();
+
+    ngx_unlock(ngx_thread_pool_done_lock);
+
+    (void) ngx_notify(ngx_thread_pool_handler);
+}
+
+#endif
 
 
 typedef struct {

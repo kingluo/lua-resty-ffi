@@ -32,6 +32,10 @@ local C = ffi.C
 local base = require "resty.core.base"
 local get_request = base.get_request
 
+local init = false
+local function test_symbol(sym) return C[sym] ~= nil end
+local resty_ffi = C
+
 local runtimes = {}
 
 ffi.cdef[[
@@ -41,6 +45,7 @@ int libffi_init(char* cfg, void *tq);
 void* ngx_http_lua_ffi_create_task_queue(int max_queue);
 int ngx_http_lua_ffi_task_post(void *r, void* tq, char* req, int req_len);
 int ngx_http_lua_ffi_task_finish(void *p);
+int lua_resty_ffi_init();
 ]]
 
 local function post(self, req)
@@ -54,7 +59,7 @@ local function post(self, req)
         buf = C.malloc(#req + 1)
         ffi.copy(buf, req)
     end
-    local ret = C.ngx_http_lua_ffi_task_post(get_request(), self.tq, buf, buf_len)
+    local ret = resty_ffi.ngx_http_lua_ffi_task_post(get_request(), self.tq, buf, buf_len)
     if ret ~= 0 then
         return false, "post failed, queue full"
     end
@@ -65,7 +70,7 @@ local function unload(self)
     if not self.finished then
         self.finished = true
         self.handle = nil
-        C.ngx_http_lua_ffi_task_finish(self.tq)
+        resty_ffi.ngx_http_lua_ffi_task_finish(self.tq)
         self.tq = nil
         runtimes[self.key] = nil
         self.key = nil
@@ -91,6 +96,17 @@ local function ffi_load(lib, is_global, is_pin)
 end
 
 ngx.load_ffi = function(lib, cfg, opts)
+    if not init then
+        if not pcall(test_symbol, "ngx_http_lua_ffi_create_task_queue") then
+            local handle = ffi.load("resty_ffi", true)
+            if handle.lua_resty_ffi_init() ~= 0 then
+                error("lua_resty_ffi_init() failed: nginx build-id not found or mismatch")
+            end
+            resty_ffi = handle
+        end
+        init = true
+    end
+
     local max_queue = 65536
     local is_global = false
     if opts ~= nil then
@@ -111,7 +127,7 @@ ngx.load_ffi = function(lib, cfg, opts)
     end
 
     local is_pin = (not opts) or (not opts.unpin)
-    local tq = C.ngx_http_lua_ffi_create_task_queue(max_queue)
+    local tq = resty_ffi.ngx_http_lua_ffi_create_task_queue(max_queue)
     local nffi = setmetatable({
         finished = false,
         key = key,
