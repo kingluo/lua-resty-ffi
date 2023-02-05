@@ -26,6 +26,7 @@ description = {
     ]],
     homepage = "https://github.com/kingluo/lua-resty-ffi",
     license = " BSD-3-Clause",
+    maintainer = "Jinhua Luo <luajit.io@gmail.com>",
 }
 
 dependencies = {
