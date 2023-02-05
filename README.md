@@ -51,6 +51,22 @@ Also, check this blog post:
 
 [Chinese blog](https://zhuanlan.zhihu.com/p/586934870)
 
+## Install lua-resty-ffi via luarocks
+
+Now it provides an optional non-intrusive way to use lua-resty-ffi.
+
+Check this blog for detail:
+
+http://luajit.io/resolve-c-static-variables-of-main-executable-from-the-dynamic-loaded-shared-library/
+
+* specify your openresty source path in variable `$OR_SRC`
+* ensure openresty source are already configured and built according to your product release
+
+```bash
+luarocks config variables.OR_SRC /tmp/tmp.Z2UhJbO1Si/openresty-1.21.4.1
+luarocks install lua-resty-ffi
+```
+
 ## Background
 
 In openresty land, when you turn to implement some logic, especially to couple with third-party popular frameworks, it's likely to suck in awkward: make bricks without straw.
