@@ -101,7 +101,6 @@ lua_resty_ffi_init()
     addr = (char*)&ngx_calloc;
     addr += NGX_THREAD_POOL_HANDLER_OFFSET;
     ngx_thread_pool_handler = (ngx_event_handler_pt)addr;
-        printf("%p %p %p\n", &ngx_cycle, ngx_thread_pool_done, ngx_thread_pool_done_lock);
 
     free(buf);
 
