@@ -77,7 +77,7 @@ lua_resty_ffi_init()
 
     const uint8_t *build_id = build_id_data(note);
 
-    char* buf = (char*)calloc(len*2, 1);
+    char* buf = (char*)calloc(len*2+100, 1);
     for (ElfW(Word) i = 0; i < len; i++) {
         sprintf(buf + strlen(buf), "%02x", build_id[i]);
     }
@@ -101,6 +101,7 @@ lua_resty_ffi_init()
     addr = (char*)&ngx_calloc;
     addr += NGX_THREAD_POOL_HANDLER_OFFSET;
     ngx_thread_pool_handler = (ngx_event_handler_pt)addr;
+        printf("%p %p %p\n", &ngx_cycle, ngx_thread_pool_done, ngx_thread_pool_done_lock);
 
     free(buf);
 
