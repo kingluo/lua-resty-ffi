@@ -19,3 +19,4 @@ fi
 
 (cd http2-demo; mvn -q -DskipTests=true -Dmaven.test.skip=true package)
 (cd echo-demo; mvn -q -DskipTests=true -Dmaven.test.skip=true package)
+(cd loader; mvn -q -DskipTests=true -Dmaven.test.skip=true package)
