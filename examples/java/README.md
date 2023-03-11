@@ -20,14 +20,6 @@ yum -y install java-11-openjdk-devel
 apt -y install openjdk-11-jdk
 ```
 
-## Install maven
-
-```bash
-wget --no-check-certificate https://dlcdn.apache.org/maven/maven-3/3.8.6/binaries/apache-maven-3.8.6-bin.tar.gz
-rm -rf /usr/local/apache-maven-3.8.6 && tar -C /usr/local -xzf apache-maven-3.8.6-bin.tar.gz
-export PATH=/usr/local/apache-maven-3.8.6/bin:$PATH
-```
-
 ## Build and test
 
 ```bash
