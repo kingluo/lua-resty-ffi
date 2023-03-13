@@ -17,6 +17,6 @@ else
     gcc -O2 -shared -fPIC -o libffi_java.so loader.c -I/usr/lib/jvm/java-11-openjdk-amd64/include/ -I/usr/lib/jvm/java-11-openjdk-amd64/include/linux/ -L/usr/lib/jvm/java-11-openjdk-amd64/lib/ -L/usr/lib/jvm/java-11-openjdk-amd64/lib/server/ -ljvm -pthread
 fi
 
-(cd http2-demo; mvn -q -DskipTests=true -Dmaven.test.skip=true package)
-(cd echo-demo; mvn -q -DskipTests=true -Dmaven.test.skip=true package)
-(cd loader; mvn -q -DskipTests=true -Dmaven.test.skip=true package)
+(cd http2-demo; ./mvnw -q -DskipTests=true -Dmaven.test.skip=true package)
+(cd echo-demo; ./mvnw -q -DskipTests=true -Dmaven.test.skip=true package)
+(cd loader; ./mvnw -q -DskipTests=true -Dmaven.test.skip=true package)
