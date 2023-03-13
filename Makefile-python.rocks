@@ -1,0 +1,12 @@
+INST_PREFIX ?= /usr
+INST_LIBDIR ?= $(INST_PREFIX)/lib/lua/5.1
+INSTALL ?= install
+
+.PHONY: build
+build:
+	cd examples/python; ./build.sh
+
+.PHONY: install
+install:
+	$(INSTALL) -d $(INST_LIBDIR)/
+	$(INSTALL) examples/python/libresty_ffi_python.so $(INST_LIBDIR)/
