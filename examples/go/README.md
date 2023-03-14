@@ -1,26 +1,18 @@
 # Golang ffi library examples
 
-* `echo.go`
+* `echo.go` Minimal example, echo your request.
+* `etcd.go` Simple etcd client, implements put and watch operations.
+* [lua-resty-ffi-kafka](https://github.com/kingluo/lua-resty-ffi-kafka)
 
-Echo your request.
-
-* `etcd.go`
-
-Simple etcd client, implements put and watch operations.
-
-## Install golang if not yet
-
-https://go.dev/doc/install
+## Demo
 
 ```bash
+# install golang
+# https://go.dev/doc/install
 wget https://go.dev/dl/go1.19.3.linux-amd64.tar.gz
 rm -rf /usr/local/go && tar -C /usr/local -xzf go1.19.3.linux-amd64.tar.gz
 export PATH=$PATH:/usr/local/go/bin
-```
 
-## Build and test
-
-```bash
 # install latest docker version
 # https://docs.docker.com/engine/install/
 
