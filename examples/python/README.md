@@ -1,26 +1,31 @@
-# Python3 ffi library
+# Python loader library
 
 It uses [`cffi`](https://cffi.readthedocs.io/) to call lua-resty-ffi C APIs.
 
-* `ffi/echo.py`
+## Examples
 
-Echo the request.
+* `ffi/echo.py` Minimal example, echo the request.
+* `ffi/kafka.py` Simple kafka client. Implements produce and consumer group.
+* [lua-resty-ffi-ldap](https://github.com/kingluo/lua-resty-ffi-ldap)
 
-* `ffi/kafka.py`
-
-Simple kafka client. Implements produce and consumer group.
-
-## Install python3-dev
+## Install via luarocks
 
 ```bash
-# for centos
-yum -y install python3-devel
-
-# for ubuntu
-apt -y install python3-dev python3-pip libffi-dev
+# install lua-resty-ffi and lua-resty-ffi-python
+# https://github.com/kingluo/lua-resty-ffi#install-lua-resty-ffi-via-luarocks
+# set `OR_SRC` to your openresty source path
+luarocks config variables.OR_SRC /tmp/tmp.Z2UhJbO1Si/openresty-1.21.4.1
+luarocks install lua-resty-ffi-python
 ```
 
-## Build and test
+## Build from source
+
+```bash
+# compile loader library
+make
+```
+
+## Demo
 
 ```bash
 # install latest docker version
@@ -31,9 +36,6 @@ docker compose up -d
 
 # ensure kafka is ready
 docker compose logs -f
-
-# compile loader library
-make
 
 # run nginx
 make run
