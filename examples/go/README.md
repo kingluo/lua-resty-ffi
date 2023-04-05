@@ -3,6 +3,7 @@
 * `echo.go` Minimal example, echo your request.
 * `etcd.go` Simple etcd client, implements put and watch operations.
 * [lua-resty-ffi-kafka](https://github.com/kingluo/lua-resty-ffi-kafka)
+* [lua-resty-ffi-req](https://github.com/kingluo/lua-resty-ffi-req)
 
 ## Demo
 
