@@ -1,12 +1,7 @@
-# Rust ffi library
+# Rust ffi library examples
 
-* `echo`
-
-Echo the request.
-
-* `grpc_client`
-
-Generic grpc client based on [`tonic`](https://github.com/hyperium/tonic) low-level APIs.
+* `echo.go` Minimal example, echo your request.
+* [lua-resty-ffi-grpc](https://github.com/kingluo/lua-resty-ffi-grpc)
 
 ## Install rust if not yet
 
@@ -18,22 +13,6 @@ source "$HOME/.cargo/env"
 ## Build and test
 
 ```bash
-# in terminal-1
-
-# Install protoc-3 if not yet
-# https://grpc.io/docs/protoc-installation/
-PB_REL="https://github.com/protocolbuffers/protobuf/releases"
-curl -LO $PB_REL/download/v3.15.8/protoc-3.15.8-linux-x86_64.zip
-unzip protoc-3.15.8-linux-x86_64.zip -d /usr/local
-
-# install lua-protobuf
-# for centos7
-source scl_source enable devtoolset-9
-# for centos8
-source /opt/rh/gcc-toolset-9/enable
-
-luarocks install lua-protobuf
-
 # build examples libraries
 make
 
@@ -42,26 +21,9 @@ make run
 # or specify nginx executable file path
 # make run NGINX_BIN=/path/to/nginx
 
-# in terminal-2
-
-# run tonic grpc test server
-cd /opt
-git clone https://github.com/hyperium/tonic
-cd tonic
-cargo run --release --bin routeguide-server
-
-# in terminal-3
+# in another terminal
+# curl the tests
 make test
-
-#
-# test TLS
-#
-
-# in terminal-2
-cargo run --release --bin tls-client-auth-server
-
-# in terminal-3
-curl localhost:20000/tls
 ```
 
 ## Library Skelton
