@@ -1,7 +1,7 @@
 # Golang ffi library examples
 
 * `echo.go` Minimal example, echo your request.
-* `etcd.go` Simple etcd client, implements put and watch operations.
+* [lua-resty-ffi-etcd](https://github.com/kingluo/lua-resty-ffi-etcd)
 * [lua-resty-ffi-kafka](https://github.com/kingluo/lua-resty-ffi-kafka)
 * [lua-resty-ffi-req](https://github.com/kingluo/lua-resty-ffi-req)
 
@@ -13,12 +13,6 @@
 wget https://go.dev/dl/go1.19.3.linux-amd64.tar.gz
 rm -rf /usr/local/go && tar -C /usr/local -xzf go1.19.3.linux-amd64.tar.gz
 export PATH=$PATH:/usr/local/go/bin
-
-# install latest docker version
-# https://docs.docker.com/engine/install/
-
-# start etcd container for test
-docker compose up -d
 
 # compile example libraries
 make
@@ -49,7 +43,7 @@ func libffi_init(cfg_cstr *C.char, tq unsafe.Pointer) C.int {
             // get the request message from the task
             var rlen C.int
             r := C.ngx_http_lua_ffi_get_req(task, &rlen)
-            
+
             // copy the request as response, allocated by C malloc()
             // note that both request and response would be freed by nginx
             res := C.malloc(C.ulong(rlen))

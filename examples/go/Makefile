@@ -3,7 +3,6 @@ NGINX_BIN ?= /opt/resty_ffi/nginx/sbin/nginx
 .PHONY: build
 build:
 	go mod download
-	go build -buildmode=c-shared -o libffi_go_etcd.so etcd.go
 	go build -buildmode=c-shared -o libffi_go_echo.so echo.go
 
 .PHONY: run
@@ -14,4 +13,3 @@ run:
 .PHONY: test
 test:
 	curl localhost:20000/echo
-	curl localhost:20000/etcd
