@@ -6,7 +6,8 @@ It uses [`cffi`](https://cffi.readthedocs.io/) to call lua-resty-ffi C APIs.
 
 * `ffi/echo.py` Minimal example, echo the request.
 * `ffi/kafka.py` Simple kafka client. Implements produce and consumer group.
-* [lua-resty-ffi-ldap](https://github.com/kingluo/lua-resty-ffi-ldap)
+* [lua-resty-ffi-ldap](https://github.com/kingluo/lua-resty-ffi-ldap) ldap client, supports all SASL auth methods
+* [lua-resty-ffi-graphql-resolver](https://github.com/kingluo/lua-resty-ffi-graphql-resolver) embed graphql server into nginx
 
 ## Install via luarocks
 
