@@ -12,6 +12,7 @@ lua-resty-ffi provides an efficient and generic API to do hybrid programming in 
 * any serialization message format you like
 
 **TODO:**
+* [x] envoy porting
 * [ ] python: support running venv package based on sub-interpreter
 * [ ] logging to nginx error.log (aware of file rotation), e.g. python [WatchedFileHandler](https://stackoverflow.com/questions/9106795/python-logging-and-rotating-files)
 * [ ] shared_dict API
@@ -56,6 +57,55 @@ Also, check this blog post:
 
 [Chinese blog](https://zhuanlan.zhihu.com/p/586934870)
 
+### envoy
+
+https://github.com/kingluo/envoy/tree/lua-resty-ffi
+
+```bash
+# install lua-resty-ffi first according to the above Quickstart
+
+# compile envoy
+cd /opt
+git clone https://github.com/kingluo/envoy
+cd envoy
+git checkout origin/lua-resty-ffi
+
+./ci/run_envoy_docker.sh './ci/do_ci.sh bazel.dev'
+
+ln -f /tmp/envoy-docker-build/envoy/source/exe/envoy/envoy /usr/local/bin/envoy
+
+# run demo
+cd /opt/envoy/examples/lua
+PYTHONPATH=/opt/lua-resty-ffi/examples/python/ \
+LD_LIBRARY_PATH=/opt/lua-resty-ffi/examples/python \
+LUA_PATH='/opt/lua-resty-ffi/?.lua;;' \
+envoy -c envoy.yaml --concurrency 1
+
+curl -v localhost:8000/httpbin/get
+```
+
+**envoy.yaml snippet:**
+
+```yaml
+  http_filters:
+  - name: lua_filter_with_custom_name_0
+    typed_config:
+      "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
+      default_source_code:
+        inline_string: |
+          function envoy_on_request(request_handle)
+            require("resty_ffi")
+            local demo = ngx.load_ffi("ffi_go_echo")
+            local ok, res = demo:foobar("foobar", request_handle)
+            assert(ok)
+            assert(res == "foobar")
+            local demo = ngx.load_ffi("resty_ffi_python", "ffi.echo?,init", {is_global = true})
+            local ok, res = demo:echo("hello", request_handle)
+            assert(ok)
+            assert(res == "hello")
+          end
+```
+
 ## Install lua-resty-ffi via luarocks
 
 Now it provides an optional non-intrusive way to use lua-resty-ffi.
@@ -98,6 +148,8 @@ and reuse their rich ecosystems directly? Yes, that's what lua-resty-ffi does.**
 ## Architecture
 
 ![architecture](architecture.png)
+
+![callflow](lua-resty-ffi-callflow.svg)
 
 ## Concepts
 
