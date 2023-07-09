@@ -27,6 +27,8 @@ lua-resty-ffi provides an efficient and generic API to do hybrid programming in 
 
 ![callflow](lua-resty-ffi-callflow.svg)
 
+*(take python as example)*
+
 ## Quickstart
 
 Take golang as an example:
