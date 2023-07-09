@@ -17,6 +17,12 @@ lua-resty-ffi provides an efficient and generic API to do hybrid programming in 
 * [ ] logging to nginx error.log (aware of file rotation), e.g. python [WatchedFileHandler](https://stackoverflow.com/questions/9106795/python-logging-and-rotating-files)
 * [ ] shared_dict API
 
+## Architecture
+
+![architecture](architecture.png)
+
+![callflow](lua-resty-ffi-callflow.svg)
+
 ## Quickstart
 
 Take golang as an example:
@@ -144,12 +150,6 @@ WASM has below shortages, which make it not suitable for openresty:
 
 **So, may I extend the openresty with modern programming languages (Go, Python, Java, Rust, etc.)
 and reuse their rich ecosystems directly? Yes, that's what lua-resty-ffi does.**
-
-## Architecture
-
-![architecture](architecture.png)
-
-![callflow](lua-resty-ffi-callflow.svg)
 
 ## Concepts
 
