@@ -33,12 +33,20 @@
 #include <jni.h>
 #include <string.h>
 #include <stdlib.h>
+#include <pthread.h>
 
 static JavaVM *vm;
 static JNIEnv *env;
+static pthread_mutex_t init_lock = PTHREAD_MUTEX_INITIALIZER;
+
+#define RET(rc) \
+    pthread_mutex_unlock(&init_lock); \
+    return rc;
 
 int libffi_init(char* cfg, void *tq)
 {
+    pthread_mutex_lock(&init_lock);
+
     if (vm == NULL) {
         JavaVMInitArgs  vm_args;
         jint            res;
@@ -57,7 +65,7 @@ int libffi_init(char* cfg, void *tq)
         char* class_path = getenv("CLASSPATH");
         if (class_path) {
             if (asprintf(&path, "-Djava.class.path=%s", class_path) == -1) {
-                return 1;
+                RET(1);
             }
             options[vm_args.nOptions++].optionString = path;
         }
@@ -85,7 +93,7 @@ int libffi_init(char* cfg, void *tq)
         }
         if (res != JNI_OK) {
             printf("Failed to create Java VM\n");
-            return 1;
+            RET(1);
         }
     }
 
@@ -114,14 +122,14 @@ int libffi_init(char* cfg, void *tq)
     if (cls == NULL) {
         printf("Failed to find Main class\n");
         free(orig_cfg);
-        return 1;
+        RET(1);
     }
 
     mid = (*env)->GetStaticMethodID(env, cls, method, "(Ljava/lang/String;J)I");
     if (mid == NULL) {
         printf("Failed to find main function\n");
         free(orig_cfg);
-        return 1;
+        RET(1);
     }
 
     if (dyn_flag) {
@@ -138,5 +146,6 @@ int libffi_init(char* cfg, void *tq)
         (*env)->ExceptionDescribe(env);
     }
 
-    return rc;
+    pthread_mutex_unlock(&init_lock);
+    RET(rc);
 }

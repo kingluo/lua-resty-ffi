@@ -29,8 +29,11 @@
 --
 local ffi = require "ffi"
 local C = ffi.C
-local base = require "resty.core.base"
-local get_request = base.get_request
+local get_request
+local ok, base = pcall(require, "resty.core.base")
+if ok then
+    get_request = base.get_request
+end
 
 local init = false
 local function test_symbol(sym) return C[sym] ~= nil end
@@ -48,7 +51,7 @@ int ngx_http_lua_ffi_task_finish(void *p);
 int lua_resty_ffi_init();
 ]]
 
-local function post(self, req)
+local function post(self, req, wrapper)
     if self.finished then
         return false, "task queue is finished"
     end
@@ -59,9 +62,13 @@ local function post(self, req)
         buf = C.malloc(#req + 1)
         ffi.copy(buf, req)
     end
-    local ret = resty_ffi.ngx_http_lua_ffi_task_post(get_request(), self.tq, buf, buf_len)
+    local r = wrapper and wrapper:this() or get_request()
+    local ret = resty_ffi.ngx_http_lua_ffi_task_post(r, self.tq, buf, buf_len)
     if ret ~= 0 then
         return false, "post failed, queue full"
+    end
+    if wrapper then
+        return wrapper:ffiYield()
     end
     return coroutine._yield()
 end
@@ -95,6 +102,7 @@ local function ffi_load(lib, is_global, is_pin)
     return handle
 end
 
+ngx = ngx or {}
 ngx.load_ffi = function(lib, cfg, opts)
     if not init then
         if not pcall(test_symbol, "ngx_http_lua_ffi_create_task_queue") then

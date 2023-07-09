@@ -49,6 +49,7 @@ using v8::Value;
 
 static int client_fd;
 static bool initialized = false;
+static pthread_mutex_t init_lock = PTHREAD_MUTEX_INITIALIZER;
 
 static void* thread_fn(void* data)
 {
@@ -157,6 +158,8 @@ static void* thread_fn(void* data)
 
 extern "C" int libffi_init(char* cfg, void *tq)
 {
+    pthread_mutex_lock(&init_lock);
+
     if (!initialized) {
         initialized = true;
 
@@ -201,5 +204,6 @@ extern "C" int libffi_init(char* cfg, void *tq)
     }
     sscanf(buf, "%d", &ret);
 
+    pthread_mutex_unlock(&init_lock);
     return ret;
 }

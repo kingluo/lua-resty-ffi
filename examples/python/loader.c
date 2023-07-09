@@ -31,8 +31,11 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <string.h>
+#include <pthread.h>
 
 static PyThreadState *mainThreadState = NULL;
+
+static pthread_mutex_t init_lock = PTHREAD_MUTEX_INITIALIZER;
 
 typedef struct {
     char* module;
@@ -140,6 +143,8 @@ end:
 
 int libffi_init(char* cfg, void *tq)
 {
+    pthread_mutex_lock(&init_lock);
+
     if (mainThreadState == NULL) {
         Py_Initialize();
         mainThreadState = PyEval_SaveThread();
@@ -153,7 +158,11 @@ int libffi_init(char* cfg, void *tq)
     state.func = strsep(&str, ",");
     state.cfg = str;
 
-    return init(&state);
+    int rc = init(&state);
+
+    pthread_mutex_unlock(&init_lock);
+
+    return rc;
 }
 
 __attribute__((destructor)) void ffi_python_fini(void) {
