@@ -3,6 +3,10 @@
 lua-resty-ffi provides an efficient and generic API to do hybrid programming in openresty with mainstream languages
 ([Go](examples/go), [Python](examples/python), [Java](examples/java), [Rust](examples/rust), [Node.js](examples/nodejs), etc.).
 
+**Now it supports [Envoy](https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/lua_filter)!**
+
+**That means all lua-resty-ffi based libraries (e.g. [lua-resty-ffi-grpc](https://github.com/kingluo/lua-resty-ffi-grpc)) can run on both Nginx and Envoy seamlessly without code changes.**
+
 **Features:**
 * nonblocking, in coroutine way
 * simple but extensible interface, supports any C ABI compliant language
