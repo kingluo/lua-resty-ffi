@@ -72,8 +72,6 @@ Also, check this blog post:
 https://github.com/kingluo/envoy/tree/lua-resty-ffi
 
 ```bash
-# install lua-resty-ffi first according to the above Quickstart
-
 # compile envoy
 cd /opt
 git clone https://github.com/kingluo/envoy
