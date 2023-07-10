@@ -21,6 +21,18 @@ lua-resty-ffi provides an efficient and generic API to do hybrid programming in 
 * [ ] logging to nginx error.log (aware of file rotation), e.g. python [WatchedFileHandler](https://stackoverflow.com/questions/9106795/python-logging-and-rotating-files)
 * [ ] shared_dict API
 
+**Sub-Projects:**
+* Go
+  * [lua-resty-ffi-etcd](https://github.com/kingluo/lua-resty-ffi-etcd)
+  * [lua-resty-ffi-kafka](https://github.com/kingluo/lua-resty-ffi-kafka)
+  * [lua-resty-ffi-req](https://github.com/kingluo/lua-resty-ffi-req) HTTP 1/2/3 client
+* Python
+  * [lua-resty-ffi-ldap](https://github.com/kingluo/lua-resty-ffi-ldap) ldap client, supports all SASL auth methods
+  * [lua-resty-ffi-graphql-resolver](https://github.com/kingluo/lua-resty-ffi-graphql-resolver) embed graphql server into nginx
+  * [lua-resty-ffi-soap](https://github.com/kingluo/lua-resty-ffi-soap) The openresty SOAP to REST library based on zeep.
+* Rust
+  * [lua-resty-ffi-grpc](https://github.com/kingluo/lua-resty-ffi-grpc) grpc client based on tonic
+
 ## Architecture
 
 ![architecture](architecture.png)
@@ -70,6 +82,12 @@ Also, check this blog post:
 [Chinese blog](https://zhuanlan.zhihu.com/p/586934870)
 
 ### envoy
+
+Blog:
+
+http://luajit.io/posts/make-lua-resty-ffi-run-on-envoy/
+
+Repo:
 
 https://github.com/kingluo/envoy/tree/lua-resty-ffi
 
