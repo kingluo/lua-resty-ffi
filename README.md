@@ -87,6 +87,8 @@ Blog:
 
 http://luajit.io/posts/make-lua-resty-ffi-run-on-envoy/
 
+http://luajit.io/posts/envoy-async-http-filter-lua-resty-ffi-vs-golang/
+
 Repo:
 
 https://github.com/kingluo/envoy/tree/lua-resty-ffi
