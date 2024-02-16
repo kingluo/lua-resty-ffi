@@ -17,6 +17,8 @@ lua-resty-ffi provides an efficient and generic API to do hybrid programming in 
 
 **TODO:**
 * [x] envoy porting
+* [ ] batch polling
+* [ ] use spinlock
 * [ ] python: support running venv package based on sub-interpreter
 * [ ] logging to nginx error.log (aware of file rotation), e.g. python [WatchedFileHandler](https://stackoverflow.com/questions/9106795/python-logging-and-rotating-files)
 * [ ] shared_dict API
