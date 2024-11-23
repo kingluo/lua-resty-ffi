@@ -62,12 +62,14 @@ fi
 export_openresty_variables
 
 SRC=$PWD
-mkdir -p /opt/resty_ffi/src
+VER=1.21.4.1
+sudo mkdir -p /opt/resty_ffi/src
+sudo chown -R $UID:$UID /opt/resty_ffi
 cd /opt/resty_ffi/src
-wget https://openresty.org/download/openresty-1.21.4.1.tar.gz
-tar zxf openresty-1.21.4.1.tar.gz
+wget https://openresty.org/download/openresty-$VER.tar.gz
+tar zxf openresty-$VER.tar.gz
 
-cd openresty-1.21.4.1/bundle/
+cd openresty-$VER/bundle/
 for f in $SRC/patches/*; do
     patch -p0 < $f
 done
@@ -77,7 +79,7 @@ cp -a $SRC/resty_ffi.lua lua-resty-core-0.1.23/lib/resty/core/
 
 cd ..
 ./configure --prefix=/opt/resty_ffi --with-threads --with-cc-opt="$cc_opt" --with-ld-opt="$ld_opt" $@
-make install
+sudo make install
 
 # compile and install luarocks for luajit and openssl from openresty
 cd /tmp
@@ -85,7 +87,7 @@ wget https://github.com/luarocks/luarocks/archive/v3.8.0.tar.gz
 tar zxf v3.8.0.tar.gz
 cd luarocks-3.8.0
 ./configure --with-lua=/opt/resty_ffi/luajit
-make install
+sudo make install
 export PATH=$PATH:/usr/local/bin
 mkdir ~/.luarocks
 luarocks config variables.OPENSSL_LIBDIR /usr/local/openresty/openssl111/lib
