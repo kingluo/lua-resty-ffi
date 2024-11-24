@@ -41,29 +41,30 @@ lua-resty-ffi provides an efficient and generic API to do hybrid programming in 
 
 ![callflow](lua-resty-ffi-callflow.svg)
 
-*(take python as example)*
+Useful blog post:
+
+[Implement Grpc Client in Rust for Openresty](http://luajit.io/post/implement-grpc-client-in-rust-for-openresty/) ([Chinese version](https://zhuanlan.zhihu.com/p/586934870))
 
 ## Quickstart
+
+### Install lua-resty-ffi via luarocks
+
+* specify your openresty source path in variable `$OR_SRC`
+* ensure openresty source are already configured and built according to your product release
+
+```bash
+luarocks config variables.OR_SRC /tmp/tmp.Z2UhJbO1Si/openresty-1.21.4.1
+luarocks install lua-resty-ffi
+```
+
+### Demo
 
 Take golang as an example:
 
 ```bash
-cd /opt
-git clone https://github.com/kingluo/lua-resty-ffi
-cd lua-resty-ffi
-
-# compile and install openresty with lua-resty-ffi
-# optionally, you could specify any compile options you need, e.g.
-# ./build.sh --with-pcre-jit --add-module=...
-./build.sh
-
 cd examples/go
 
-# install golang if not yet
-wget https://go.dev/dl/go1.19.3.linux-amd64.tar.gz
-rm -rf /usr/local/go && tar -C /usr/local -xzf go1.19.3.linux-amd64.tar.gz
-export PATH=$PATH:/usr/local/go/bin
-
+# install golang if not yet, see https://go.dev/doc/install
 # compile example libraries
 make
 
@@ -74,14 +75,6 @@ make run
 curl http://localhost:20000/echo
 ok
 ```
-
-Please check the directory of each programming language for detail.
-
-Also, check this blog post:
-
-[Implement Grpc Client in Rust for Openresty](http://luajit.io/post/implement-grpc-client-in-rust-for-openresty/)
-
-[Chinese blog](https://zhuanlan.zhihu.com/p/586934870)
 
 ### envoy
 
@@ -136,22 +129,6 @@ curl -v localhost:8000/httpbin/get
             assert(ok)
             assert(res == "hello")
           end
-```
-
-## Install lua-resty-ffi via luarocks
-
-Now it provides an optional non-intrusive way to use lua-resty-ffi.
-
-Check this blog for detail:
-
-http://luajit.io/posts/resolve-c-static-variables-of-main-executable-from-the-dynamic-loaded-shared-library/
-
-* specify your openresty source path in variable `$OR_SRC`
-* ensure openresty source are already configured and built according to your product release
-
-```bash
-luarocks config variables.OR_SRC /tmp/tmp.Z2UhJbO1Si/openresty-1.21.4.1
-luarocks install lua-resty-ffi
 ```
 
 ## Background
