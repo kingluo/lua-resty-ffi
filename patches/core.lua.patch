@@ -1,8 +1,0 @@
---- lua-resty-core-0.1.23-orig/lib/resty/core.lua       2021-11-14 09:43:51.000000000 +0800
-+++ lua-resty-core-0.1.23/lib/resty/core.lua    2022-11-19 15:18:32.628976777 +0800
-@@ -20,6 +20,7 @@
-     require "resty.core.phase"
-     require "resty.core.ndk"
-     require "resty.core.socket"
-+    require "resty.core.resty_ffi"
- end
